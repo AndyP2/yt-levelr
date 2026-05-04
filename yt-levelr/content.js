@@ -92,8 +92,7 @@ browser.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       targetRMS: state.targetRMS,
       elapsed: playingMs,
       waveform,
-      gainLimits: limits,
-      paused: videoEl ? (videoEl.paused || isEffectivelyMuted()) : true
+      gainLimits: limits
     });
     return true; // keeps the message channel open for sendResponse
   }
@@ -197,9 +196,6 @@ function applyGain(g, elapsed) {
   if (gainNode && enabled) {
     gainNode.gain.setTargetAtTime(currentGain, audioCtx.currentTime, tc);
   }
-  try {
-    browser.runtime.sendMessage({ type: "gainUpdate", gain: currentGain, locked });
-  } catch(e) {}
 }
 
 function getVolumeScale() {
@@ -277,7 +273,7 @@ function measurementLoop() {
     // Slow drift correction after lock
     const timeSinceDrift = Date.now() - lastDriftCorrection;
     if (timeSinceDrift >= DRIFT_TC) {
-      measurementSamples.push(rms);
+      measurementSamples.push(trueRMS);
       if (measurementSamples.length >= 60) {
         const medianRMS = median(measurementSamples);
         // medianRMS is already pre-scaled to true signal level, so no volume factor needed
