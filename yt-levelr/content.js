@@ -93,7 +93,7 @@ browser.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       elapsed: playingMs,
       waveform,
       gainLimits: limits,
-      paused: videoEl ? videoEl.paused : true
+      paused: videoEl ? (videoEl.paused || isEffectivelyMuted()) : true
     });
     return true; // keeps the message channel open for sendResponse
   }
@@ -202,6 +202,12 @@ function applyGain(g, elapsed) {
   } catch(e) {}
 }
 
+function isEffectivelyMuted() {
+  // Treat muted or zero-volume the same as paused -- no point measuring silence
+  // and divide-by-zero risk in volume compensation makes this essential
+  return videoEl && (videoEl.muted || videoEl.volume === 0);
+}
+
 function measurementLoop() {
   if (!analyserNode || !enabled) return;
 
@@ -213,14 +219,14 @@ function measurementLoop() {
 
   const now = Date.now();
 
-  // Accumulate playing time only while the video is actually running
-  if (videoEl && !videoEl.paused && !videoEl.ended) {
+  // Accumulate playing time only while the video is actually running and audible
+  if (videoEl && !videoEl.paused && !videoEl.ended && !isEffectivelyMuted()) {
     if (lastTickTime !== null) {
       playingMs += now - lastTickTime;
     }
     lastTickTime = now;
   } else {
-    // Paused -- push a null sample so the waveform shows the gap, then stop
+    // Paused or muted -- push a null sample so the waveform shows the gap, then stop
     waveformHistory[waveformHead] = null;
     waveformHead = (waveformHead + 1) % WAVEFORM_SIZE;
     lastTickTime = null;
@@ -244,9 +250,13 @@ function measurementLoop() {
     // so early corrections are necessarily modest.
     if (measurementSamples.length > 3) {
       const medianRMS = median(measurementSamples);
-      const targetGain = state.targetRMS / medianRMS;
+      // Normalise out the volume control so confidence limits apply to true signal level,
+      // then restore it on the output side so the user's volume preference is respected
+      const volumeScale = videoEl ? videoEl.volume : 1.0;
+      const trueRMS = medianRMS / volumeScale;
+      const targetGain = (state.targetRMS / trueRMS) * volumeScale;
       applyGain(targetGain, playingMs);
-      log(`Gain update at ${(playingMs/1000).toFixed(1)}s playing: ${currentGain.toFixed(3)}x (median RMS: ${medianRMS.toFixed(4)})`);
+      log(`Gain update at ${(playingMs/1000).toFixed(1)}s playing: ${currentGain.toFixed(3)}x (median RMS: ${medianRMS.toFixed(4)}, volume: ${volumeScale.toFixed(2)})`);
     }
 
     // Lock at 30s of actual playback
@@ -263,7 +273,9 @@ function measurementLoop() {
       measurementSamples.push(rms);
       if (measurementSamples.length >= 60) {
         const medianRMS = median(measurementSamples);
-        const targetGain = state.targetRMS / medianRMS;
+        const volumeScale = videoEl ? videoEl.volume : 1.0;
+        const trueRMS = medianRMS / volumeScale;
+        const targetGain = (state.targetRMS / trueRMS) * volumeScale;
         // Blend 10% toward new target, with full gain range permitted
         const correctedGain = currentGain + (targetGain - currentGain) * 0.1;
         applyGain(correctedGain);
