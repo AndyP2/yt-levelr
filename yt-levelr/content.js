@@ -203,9 +203,9 @@ function applyGain(g, elapsed) {
 }
 
 function isEffectivelyMuted() {
-  // Treat muted or zero-volume the same as paused -- no point measuring silence
-  // and divide-by-zero risk in volume compensation makes this essential
-  return videoEl && (videoEl.muted || videoEl.volume === 0);
+  // Treat muted, zero, or near-zero volume as muted -- below ~5% the RMS measurement
+  // becomes unreliable and gain compensation would divide by a dangerously small number
+  return videoEl && (videoEl.muted || videoEl.volume < 0.05);
 }
 
 function measurementLoop() {
