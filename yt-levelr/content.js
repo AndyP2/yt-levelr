@@ -232,9 +232,7 @@ function measurementLoop() {
     }
     lastTickTime = now;
   } else {
-    // Paused or muted -- push a null sample so the waveform shows the gap, then stop
-    waveformHistory[waveformHead] = null;
-    waveformHead = (waveformHead + 1) % WAVEFORM_SIZE;
+    // Paused or muted -- stop the clock without advancing the waveform
     lastTickTime = null;
     return;
   }

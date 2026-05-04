@@ -126,9 +126,8 @@ function drawWaveform(state) {
   let started = false;
   for (let i = 0; i < N; i++) {
     if (waveform[i] === null) { started = false; continue; }
-    const db = rmsToDb(waveform[i]);
     const x = i * colW;
-    const y = dbToY(db);
+    const y = dbToY(rmsToDb(waveform[i]));
     if (!started) {
       ctx.moveTo(x, CH);
       ctx.lineTo(x, y);
@@ -137,19 +136,20 @@ function drawWaveform(state) {
       ctx.lineTo(x, y);
     }
   }
-  ctx.lineTo((N - 1) * colW, CH);
-  ctx.closePath();
-  ctx.fillStyle = C_WAVEFORM;
-  ctx.fill();
+  if (started) {
+    ctx.lineTo((N - 1) * colW, CH);
+    ctx.closePath();
+    ctx.fillStyle = C_WAVEFORM;
+    ctx.fill();
+  }
 
   // Waveform top line
   ctx.beginPath();
   started = false;
   for (let i = 0; i < N; i++) {
     if (waveform[i] === null) { started = false; continue; }
-    const db = rmsToDb(waveform[i]);
     const x = i * colW + colW / 2;
-    const y = dbToY(db);
+    const y = dbToY(rmsToDb(waveform[i]));
     if (!started) { ctx.moveTo(x, y); started = true; }
     else ctx.lineTo(x, y);
   }
@@ -229,8 +229,6 @@ function pollState() {
       gainDisplay.appendChild(unitSpan);
       gainBar.style.width = gainToBarPercent(state.gain) + "%";
 
-      waveformWrap.classList.toggle("paused", !!state.paused);
-
       if (!state.enabled) {
         statusDot.className = "status-dot off";
         statusText.textContent = "disabled";
@@ -260,7 +258,6 @@ function pollState() {
       confidenceBar.className = "confidence-bar-fill";
       confidenceBar.style.width = "0%";
       confidencePct.textContent = "—";
-      waveformWrap.classList.remove("paused");
       drawWaveform({ waveform: new Array(100).fill(null) });
     });
   });
