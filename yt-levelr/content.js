@@ -202,10 +202,16 @@ function applyGain(g, elapsed) {
   } catch(e) {}
 }
 
+function getVolumeScale() {
+  // Returns the current volume as a linear scale factor (0.05..1.0).
+  // Returns null if the video is muted or below the minimum usable threshold,
+  // which callers should treat the same as paused.
+  if (!videoEl || videoEl.muted || videoEl.volume < 0.05) return null;
+  return videoEl.volume;
+}
+
 function isEffectivelyMuted() {
-  // Treat muted, zero, or near-zero volume as muted -- below ~5% the RMS measurement
-  // becomes unreliable and gain compensation would divide by a dangerously small number
-  return videoEl && (videoEl.muted || videoEl.volume < 0.05);
+  return getVolumeScale() === null;
 }
 
 function measurementLoop() {
@@ -234,7 +240,7 @@ function measurementLoop() {
   }
 
   const rms = getRMS();
-  const volumeScale = (videoEl && videoEl.volume > 0) ? videoEl.volume : 1.0;
+  const volumeScale = getVolumeScale() ?? 1.0; // defensive fallback, unreachable in practice
 
   // Pre-scale RMS by 1/volume to get the video's inherent signal level,
   // independent of where the user has the volume set.
