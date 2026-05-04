@@ -234,29 +234,32 @@ function measurementLoop() {
   }
 
   const rms = getRMS();
+  const volumeScale = (videoEl && videoEl.volume > 0) ? videoEl.volume : 1.0;
+
+  // Pre-scale RMS by 1/volume to get the video's inherent signal level,
+  // independent of where the user has the volume set.
+  // The waveform also uses this so the display reflects true content loudness.
+  const trueRMS = rms / volumeScale;
 
   // Always record to waveform history regardless of noise floor
-  waveformHistory[waveformHead] = rms;
+  waveformHistory[waveformHead] = trueRMS;
   waveformHead = (waveformHead + 1) % WAVEFORM_SIZE;
 
   // Skip silence
-  if (rms < NOISE_FLOOR) return;
+  if (trueRMS < NOISE_FLOOR) return;
 
   if (!locked) {
-    measurementSamples.push(rms);
+    measurementSamples.push(trueRMS);
 
     // Apply gain on every tick from the first sample onward.
     // The confidence schedule limits how far we can move at each stage,
     // so early corrections are necessarily modest.
     if (measurementSamples.length > 3) {
       const medianRMS = median(measurementSamples);
-      // Normalise out the volume control so confidence limits apply to true signal level,
-      // then restore it on the output side so the user's volume preference is respected
-      const volumeScale = videoEl ? videoEl.volume : 1.0;
-      const trueRMS = medianRMS / volumeScale;
-      const targetGain = (state.targetRMS / trueRMS) * volumeScale;
+      // Gain is set purely from true signal level -- volume slider scales output naturally
+      const targetGain = state.targetRMS / medianRMS;
       applyGain(targetGain, playingMs);
-      log(`Gain update at ${(playingMs/1000).toFixed(1)}s playing: ${currentGain.toFixed(3)}x (median RMS: ${medianRMS.toFixed(4)}, volume: ${volumeScale.toFixed(2)})`);
+      log(`Gain update at ${(playingMs/1000).toFixed(1)}s playing: ${currentGain.toFixed(3)}x (true RMS: ${medianRMS.toFixed(4)}, volume: ${volumeScale.toFixed(2)})`);
     }
 
     // Lock at 30s of actual playback
@@ -273,9 +276,8 @@ function measurementLoop() {
       measurementSamples.push(rms);
       if (measurementSamples.length >= 60) {
         const medianRMS = median(measurementSamples);
-        const volumeScale = videoEl ? videoEl.volume : 1.0;
-        const trueRMS = medianRMS / volumeScale;
-        const targetGain = (state.targetRMS / trueRMS) * volumeScale;
+        // medianRMS is already pre-scaled to true signal level, so no volume factor needed
+        const targetGain = state.targetRMS / medianRMS;
         // Blend 10% toward new target, with full gain range permitted
         const correctedGain = currentGain + (targetGain - currentGain) * 0.1;
         applyGain(correctedGain);
