@@ -5,7 +5,7 @@ YouTube loudness levelling extension for Firefox. Currently a working prototype 
 
 ## 1. Code Quality & Architecture
 
-### 1.1 Error Handling & Edge Cases
+### 1.1 Error Handling & Edge Cases - done
 - **Content.js**: Add robust error handling for:
   - AudioContext lifecycle management (dev, mute, tab switch)
   - MediaElementSource connection failures
@@ -13,7 +13,7 @@ YouTube loudness levelling extension for Firefox. Currently a working prototype 
 - **Popup.js**: Handle timing inconsistencies when popup closes mid-poll
 - Add `try-catch` blocks around sensitive operations with graceful fallbacks
 
-### 1.2 Performance Optimizations
+### 1.2 Performance Optimizations - done
 - **Popup polling**: Reduce update frequency from 800ms to 1000-1500ms on inactivity
 - **Waveform rendering**: Add debouncing to avoid excessive canvas redraws
 - **Measurement samples**: Rate-limit drift correction to 60 samples like current implementation
