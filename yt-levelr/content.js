@@ -58,43 +58,49 @@ let lastDriftCorrection = null;
 
 let enabled = true;
 
-// Load enabled state from storage
+// Load enabled state from storage with error handling
 browser.storage.local.get("enabled").then(result => {
   enabled = result.enabled !== false; // default true
+}).catch(err => {
+  console.warn("[YT Levelr] Failed to load enabled state:", err);
 });
 
 // Listen for messages from popup
 browser.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-  if (msg.type === "setEnabled") {
-    enabled = msg.value;
-    if (gainNode) {
-      gainNode.gain.setTargetAtTime(enabled ? currentGain : 1.0, audioCtx.currentTime, 0.1);
+  try {
+    if (msg.type === "setEnabled") {
+      enabled = msg.value;
+      if (gainNode && audioCtx) {
+        gainNode.gain.setTargetAtTime(enabled ? currentGain : 1.0, audioCtx.currentTime, 0.1);
+      }
     }
-  }
-  if (msg.type === "setTarget") {
-    // TARGET_RMS is const but we can work around this via a mutable wrapper
-    state.targetRMS = msg.value;
-  }
-  if (msg.type === "remeasure") {
-    resetMeasurement();
-  }
-  if (msg.type === "getState") {
-    // Unroll ring buffer into chronological order
-    const waveform = [];
-    for (let i = 0; i < WAVEFORM_SIZE; i++) {
-      waveform.push(waveformHistory[(waveformHead + i) % WAVEFORM_SIZE]);
+    if (msg.type === "setTarget") {
+      // TARGET_RMS is const but we can work around this via a mutable wrapper
+      state.targetRMS = msg.value;
     }
-    const limits = gainLimitsForElapsed(locked ? LOCK_TC : playingMs);
-    sendResponse({
-      enabled,
-      gain: currentGain,
-      locked,
-      targetRMS: state.targetRMS,
-      elapsed: playingMs,
-      waveform,
-      gainLimits: limits
-    });
-    return true; // keeps the message channel open for sendResponse
+    if (msg.type === "remeasure") {
+      resetMeasurement();
+    }
+    if (msg.type === "getState") {
+      // Unroll ring buffer into chronological order
+      const waveform = [];
+      for (let i = 0; i < WAVEFORM_SIZE; i++) {
+        waveform.push(waveformHistory[(waveformHead + i) % WAVEFORM_SIZE]);
+      }
+      const limits = gainLimitsForElapsed(locked ? LOCK_TC : playingMs);
+      sendResponse({
+        enabled,
+        gain: currentGain,
+        locked,
+        targetRMS: state.targetRMS,
+        elapsed: playingMs,
+        waveform,
+        gainLimits: limits
+      });
+      return true; // keeps the message channel open for sendResponse
+    }
+  } catch (err) {
+    console.error("[YT Levelr] Message handler error:", err);
   }
 });
 
@@ -108,46 +114,56 @@ function log(msg) {
 }
 
 function setupAudioGraph(videoEl) {
-  if (audioCtx) {
-    try { audioCtx.close(); } catch(e) {}
+  try {
+    if (audioCtx) {
+      try { audioCtx.close(); } catch(e) {}
+    }
+
+    audioCtx = new AudioContext();
+
+    // AudioContext may start suspended if created before a user gesture.
+    // resume() is a no-op if already running, so safe to call unconditionally.
+    audioCtx.resume().catch(() => {});
+
+    sourceNode = audioCtx.createMediaElementSource(videoEl);
+
+    // Gentle compressor to tame transient peaks before gain adjustment
+    compressorNode = audioCtx.createDynamicsCompressor();
+    compressorNode.threshold.value = -18;  // dB
+    compressorNode.knee.value = 10;
+    compressorNode.ratio.value = 3;
+    compressorNode.attack.value = 0.05;
+    compressorNode.release.value = 0.3;
+
+    gainNode = audioCtx.createGain();
+    gainNode.gain.value = enabled ? currentGain : 1.0;
+
+    analyserNode = audioCtx.createAnalyser();
+    analyserNode.fftSize = 2048;
+    analyserNode.smoothingTimeConstant = 0.8;
+
+    // Graph: source -> compressor -> gain -> analyser -> destination
+    sourceNode.connect(compressorNode);
+    compressorNode.connect(gainNode);
+    gainNode.connect(analyserNode);
+    analyserNode.connect(audioCtx.destination);
+
+    log("Audio graph connected");
+  } catch (err) {
+    console.error("[YT Levelr] Failed to setup audio graph:", err);
+    throw err;
   }
-
-  audioCtx = new AudioContext();
-
-  // AudioContext may start suspended if created before a user gesture.
-  // resume() is a no-op if already running, so safe to call unconditionally.
-  audioCtx.resume().catch(() => {});
-
-  sourceNode = audioCtx.createMediaElementSource(videoEl);
-
-  // Gentle compressor to tame transient peaks before gain adjustment
-  compressorNode = audioCtx.createDynamicsCompressor();
-  compressorNode.threshold.value = -18;  // dB
-  compressorNode.knee.value = 10;
-  compressorNode.ratio.value = 3;
-  compressorNode.attack.value = 0.05;
-  compressorNode.release.value = 0.3;
-
-  gainNode = audioCtx.createGain();
-  gainNode.gain.value = enabled ? currentGain : 1.0;
-
-  analyserNode = audioCtx.createAnalyser();
-  analyserNode.fftSize = 2048;
-  analyserNode.smoothingTimeConstant = 0.8;
-
-  // Graph: source -> compressor -> gain -> analyser -> destination
-  sourceNode.connect(compressorNode);
-  compressorNode.connect(gainNode);
-  gainNode.connect(analyserNode);
-  analyserNode.connect(audioCtx.destination);
-
-  log("Audio graph connected");
 }
 
 function getRMS() {
   if (!analyserNode) return 0;
   const buf = new Float32Array(analyserNode.fftSize);
-  analyserNode.getFloatTimeDomainData(buf);
+  try {
+    analyserNode.getFloatTimeDomainData(buf);
+  } catch (err) {
+    console.warn("[YT Levelr] Failed to get time domain data:", err);
+    return 0;
+  }
   let sum = 0;
   for (let i = 0; i < buf.length; i++) {
     sum += buf[i] * buf[i];
@@ -183,18 +199,22 @@ function gainLimitsForElapsed(elapsed) {
 }
 
 function applyGain(g, elapsed) {
-  const limits = gainLimitsForElapsed(elapsed !== undefined ? elapsed : LOCK_TC);
-  const clamped = Math.max(
-    Math.max(MIN_GAIN, limits.min),
-    Math.min(Math.min(MAX_GAIN, limits.max), g)
-  );
+  try {
+    const limits = gainLimitsForElapsed(elapsed !== undefined ? elapsed : LOCK_TC);
+    const clamped = Math.max(
+      Math.max(MIN_GAIN, limits.min),
+      Math.min(Math.min(MAX_GAIN, limits.max), g)
+    );
 
-  const isCut = clamped < currentGain;
-  const tc = isCut ? TC_CUT : TC_BOOST;
+    const isCut = clamped < currentGain;
+    const tc = isCut ? TC_CUT : TC_BOOST;
 
-  currentGain = clamped;
-  if (gainNode && enabled) {
-    gainNode.gain.setTargetAtTime(currentGain, audioCtx.currentTime, tc);
+    currentGain = clamped;
+    if (gainNode && enabled) {
+      gainNode.gain.setTargetAtTime(currentGain, audioCtx.currentTime, tc);
+    }
+  } catch (err) {
+    console.error("[YT Levelr] Failed to apply gain:", err);
   }
 }
 
@@ -215,7 +235,11 @@ function measurementLoop() {
 
   // Resume AudioContext if it was suspended (e.g. browser autoplay policy)
   if (audioCtx && audioCtx.state === "suspended") {
-    audioCtx.resume().catch(() => {});
+    try {
+      audioCtx.resume();
+    } catch (err) {
+      console.warn("[YT Levelr] Failed to resume AudioContext:", err);
+    }
     return;
   }
 
@@ -330,6 +354,11 @@ function waitForVideo() {
   });
 }
 
+// Handle YouTube UI changes that might affect our listeners
+window.addEventListener("yt-navigate-start", () => {
+  log("YouTube navigation starting...");
+});
+
 // YouTube fires this on SPA navigation
 window.addEventListener("yt-navigate-finish", () => {
   if (location.href !== currentUrl) {
@@ -342,3 +371,11 @@ window.addEventListener("yt-navigate-finish", () => {
 if (location.pathname === "/watch") {
   onNewVideo();
 }
+
+// Gracefully handle video element removal
+window.addEventListener("beforeunload", () => {
+  if (intervalId) {
+    clearInterval(intervalId);
+    intervalId = null;
+  }
+});
