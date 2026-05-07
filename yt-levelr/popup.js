@@ -214,9 +214,23 @@ browser.storage.local.get(["enabled", "targetDB"]).then(result => {
 
 // ---- Poll content script ----
 
+let pollInterval = null;    // Track interval for cleanup
+let lastPollTime = 0;       // Last poll timestamp for debouncing
+const POLL_INTERVAL_MS = 1000; // Reduced from 800ms to 1000ms for better performance
+const POLL_DEBOUNCE_MS = 500; // Debounce polling when inactive
+
 function pollState() {
   browser.tabs.query({ active: true, currentWindow: true }).then(tabs => {
     if (!tabs[0]) return;
+
+    const now = Date.now();
+
+    // Debounce polling when tab is inactive
+    if (now - lastPollTime < POLL_DEBOUNCE_MS) {
+      return;
+    }
+    lastPollTime = now;
+
     browser.tabs.sendMessage(tabs[0].id, { type: "getState" }).then(state => {
       if (!state) return;
 
@@ -252,19 +266,30 @@ function pollState() {
       drawWaveform(state);
 
     }).catch(err => {
-      console.log("[YT Levelr popup] sendMessage failed:", err);
-      statusDot.className = "status-dot off";
-      statusText.textContent = "not on a YouTube video";
-      confidenceBar.className = "confidence-bar-fill";
-      confidenceBar.style.width = "0%";
-      confidencePct.textContent = "—";
-      drawWaveform({ waveform: new Array(100).fill(null) });
+      // Silently handle message errors - likely not on YouTube or tab closed
+      if (err.message && err.message.includes("Could not establish connection")) {
+        // Tab closed or not on YouTube - stop polling
+        console.log("[YT Levelr popup] Not on YouTube video, stopping poll");
+        if (pollInterval) clearInterval(pollInterval);
+        pollInterval = null;
+      } else {
+        console.log("[YT Levelr popup] sendMessage failed:", err);
+        statusDot.className = "status-dot off";
+        statusText.textContent = "not on a YouTube video";
+        confidenceBar.className = "confidence-bar-fill";
+        confidenceBar.style.width = "0%";
+        confidencePct.textContent = "—";
+        drawWaveform({ waveform: new Array(100).fill(null) });
+      }
     });
+  }).catch(err => {
+    console.warn("[YT Levelr popup] tabs.query failed:", err);
   });
 }
 
+// Start polling after initial load
 pollState();
-setInterval(pollState, 800);
+pollInterval = setInterval(pollState, POLL_INTERVAL_MS);
 
 // ---- Controls ----
 
