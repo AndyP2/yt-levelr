@@ -15,13 +15,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Zip yt-levelr files
+      - name: Build extension zip
         run: |
           mkdir -p build
           cd yt-levelr && zip -r ../build/yt-levelr.zip .
+
+      - name: Verify zip contents
+        run: |
+          unzip -l build/yt-levelr.zip
 
       - name: Create release and upload zip
         uses: softprops/action-gh-release@v2
         with:
           files: build/yt-levelr.zip
           generate_release_notes: true  # Auto-generates notes from commits
+          draft: false
+          prerelease: false
