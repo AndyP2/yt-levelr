@@ -7,3 +7,4 @@ Thumbs.db
 .kilo/
 build/
 yt-levelr.zip
+*.backup
