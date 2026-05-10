@@ -3,8 +3,7 @@ name: Create Release with Zip
 on:
   push:
     tags:
-      - 'v*.*.*'  # Matches semver tags like v1.0.0; adjust pattern as needed
-
+      - 'v*.*.*'  # Matches semver tags like v1.0.0
 permissions:
   contents: write  # Required for release creation/upload
 
@@ -12,34 +11,41 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
+      # Step 1: Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Extract version from tag for manifest update and logging purposes only
       - name: Extract version from tag
         id: version
         run: echo "tag_version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
-      - name: Update manifest
+      # Update manifest.json to match the Git tag
+      - name: Sync manifest version with git tag
         run: |
-          sed -i "s/\"version\": \".*\"/\"version\": \"${{ steps.version.outputs.tag_version }}\"/" yt-levelr/manifest.json
+          VERSION="${{ steps.version.outputs.tag_version }}"
 
-      - name: Commit manifest update
-        run: |
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
-          git add yt-levelr/manifest.json
-          git commit -m "chore: sync manifest to ${{ steps.version.outputs.tag_version }}"
-          git push
+          echo "Updating yt-levelr/manifest.json from v${VERSION}..."
 
-      - name: Checkout code
-        uses: actions/checkout@v4
+          # replace only the version field
+          sed -i "s/^\"version\": \".*$/\"version\": \"$VERSION\"/" yt-levelr/manifest.json
 
+          # Verify the change was applied correctly before zipping
+          echo "Updated manifest content:"
+          cat yt-levelr/manifest.json | grep '"version"'
+
+      # Build extension zip
       - name: Build extension zip
         run: |
           mkdir -p build
           cd yt-levelr && zip -r ../build/yt-levelr.zip .
 
+      # Verify zip contents
       - name: Verify zip contents
         run: |
-          unzip -l build/yt-levelr.zip
+          unzip -l build/yt-levelr.zip > /dev/null || (echo "❌ Zip verification failed" && exit 1)
 
+      # Create release and upload zip
       - name: Create release and upload zip
         uses: softprops/action-gh-release@v2
         with:
