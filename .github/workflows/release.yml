@@ -30,8 +30,8 @@ jobs:
           jq ".version = \"$MANIFEST_VER\"" yt-levelr/manifest.json > tmp.json && mv tmp.json yt-levelr/manifest.json
 
           echo "Updated:"
-          jq .version yt-levelr/manifest.json      - name: Sync manifest version with git tag
-
+          jq .version yt-levelr/manifest.json
+          
       # Build extension zip
       - name: Build extension zip
         run: |
