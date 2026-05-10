@@ -24,15 +24,13 @@ jobs:
       - name: Sync manifest version with git tag
         run: |
           VERSION="${{ steps.version.outputs.tag_version }}"
+          MANIFEST_VER="${VERSION#v}"  # Bash strips 'v' prefix
 
-          echo "Updating yt-levelr/manifest.json from v${VERSION}..."
+          echo "Updating to $MANIFEST_VER"
+          jq ".version = \"$MANIFEST_VER\"" yt-levelr/manifest.json > tmp.json && mv tmp.json yt-levelr/manifest.json
 
-          # replace only the version field
-          sed -i "s/^\"version\": \".*$/\"version\": \"$VERSION\"/" yt-levelr/manifest.json
-
-          # Verify the change was applied correctly before zipping
-          echo "Updated manifest content:"
-          cat yt-levelr/manifest.json | grep '"version"'
+          echo "Updated:"
+          jq .version yt-levelr/manifest.json      - name: Sync manifest version with git tag
 
       # Build extension zip
       - name: Build extension zip
@@ -43,7 +41,7 @@ jobs:
       # Verify zip contents
       - name: Verify zip contents
         run: |
-          unzip -l build/yt-levelr.zip > /dev/null || (echo "❌ Zip verification failed" && exit 1)
+          unzip -l build/yt-levelr.zip || (echo "❌ Zip verification failed" && exit 1)
 
       # Create release and upload zip
       - name: Create release and upload zip
