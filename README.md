@@ -17,14 +17,13 @@ A Firefox extension that automatically equalizes the volume of YouTube videos, e
 
 ### Firefox (Recommended)
 
+Install from the official [firefox add-on store](https://addons.mozilla.org/en-GB/firefox/addon/yt-levelr)
+
+or:
+
 1. Download the latest release from [GitHub Releases](https://github.com/AndyP2/yt-levelr/releases)
 2. Open Firefox → Menu → Add-ons and themes
-3. Click "Load Temporary Add-on" → Select the `yt-levelr` folder
-4. Or install from the official add-on store once published
-
-### Chrome (Experimental)
-
-The extension is primarily designed for Firefox but may work on Chrome with Manifest V3 compatibility. See [Chrome Compatibility](#chrome-compatibility) below.
+3. Click "Load Temporary Add-on" → Select `yt-levelr.zip`
 
 ## How It Works
 
@@ -38,7 +37,7 @@ YT Levelr uses the Web Audio API to intercept audio output from YouTube's video 
 
 ### Strategy Details
 
-- **Gain Limits Widen Over Time**: 
+- **Gain Limits Widen Over Time**:
   - 0s: ±6dB/+3dB (immediate, low confidence)
   - 10s: ±12dB/+6dB
   - 30s+: ±20dB/+15dB (full range, locked)
@@ -49,29 +48,17 @@ YT Levelr uses the Web Audio API to intercept audio output from YouTube's video 
 
 ## Usage
 
-### Basic Use
-
 1. Install the extension
-2. Navigate to any YouTube video
-3. The extension automatically starts measuring and adjusting gain
-4. After 30 seconds, gain locks and maintains consistent levels
-
-### Target Level Adjustment
-
-Click the extension icon to open the popup:
-
-- **Target Level Slider**: Adjust your preferred loudness (default: -22 dBFS)
-  - Lower values = quieter overall volume
-  - Higher values = louder overall volume
-  - Recommended range: -30 to -12 dBFS
+2. Navigate to any YouTube video and play it
+3. Click the icon to adjust target level (-30 to -12 dBFS recommended)
+4. After 30 seconds, gain locks for consistent levels
 
 ### Re-measuring
 
-If you want to reset the measurement for the current video, click "re-measure current video" in the popup. This is useful if:
+Click "re-measure current video" in the popup if:
 
 - The extension locked at an incorrect level
-- You want to start fresh with a new target
-- Audio conditions have changed significantly
+- You want a fresh measurement with new settings
 
 ## Visual Indicators
 
@@ -105,31 +92,27 @@ The popup displays real-time information:
 
 ## Privacy
 
-YT Levelr is privacy-first by design:
+YT Levelr is privacy-first:
 
-- ✅ **No Data Collection**: The extension does not collect, store, or transmit any data
-- ✅ **No Network Requests**: All processing happens locally in your browser
-- ✅ **Minimal Permissions**: Only requests `storage` and `activeTab` permissions
-- ✅ **No Analytics**: No usage statistics, crash reporting, or telemetry
-
+- ✅ No data collection or transmission
+- ✅ All processing happens locally in your browser
+- ✅ Only stores `enabled` and `targetDB` preferences locally
 See [Privacy Policy](privacy.html) for complete details.
 
 ## Technical Details
 
 ### Architecture
 
-```
-YouTube Video Element
-    ↓
-MediaElementSource (audio interception)
-    ↓
-DynamicsCompressor (transient control)
-    ↓
-GainNode (adjustment)
-    ↓
-AnalyserNode (RMS measurement)
-    ↓
-Destination (output)
+```mermaid
+graph TD
+    A[YouTube Video Element] --> B[MediaElementSource<br/>audio interception]
+    B --> C[DynamicsCompressor<br/>transient control]
+    C --> D[GainNode<br/>adjustment]
+    D --> E[AnalyserNode<br/>RMS measurement]
+    E --> F[Destination<br/>output]
+
+    classDef audioNode fill:#e1f5fe
+    class B,C,D,E,F audioNode
 ```
 
 ### Audio Processing Pipeline
@@ -149,69 +132,13 @@ Destination (output)
 ### Storage
 
 The extension stores only two user preferences locally:
+
 - `enabled`: Whether the extension is active
 - `targetDB`: Your chosen target loudness level in dBFS
 
 These values never leave your browser.
 
-## Troubleshooting
-
-### Extension Not Working
-
-1. **Check YouTube URL**: Ensure you're on a YouTube video page (`youtube.com/watch`)
-2. **Verify Video Element**: The video element must be loaded and playing
-3. **Browser Console**: Open DevTools (F12) → Console tab for error messages
-4. **Restart Browser**: Sometimes required after installation
-
-### Audio Sounds Different Than Expected
-
-1. **Check Target Level**: Click the extension icon to verify target level settings
-2. **Volume Slider**: The YouTube volume slider still works - it scales the output naturally
-3. **Reset Measurement**: Use "re-measure current video" if levels seem incorrect
-
-### Extension Shows "Not on a YouTube Video"
-
-1. **Navigate to Watch Page**: Ensure you're on `/watch` or `/video/*` paths
-2. **Video Loaded**: Wait for the video element to fully load
-3. **Browser Tab**: The extension only works in the active browser tab
-
-### Performance Issues
-
-1. **Reduce Polling**: Extension polls every 1000ms - this is lightweight but can be adjusted
-2. **Disable Waveform**: Consider disabling waveform animation if needed
-3. **Hardware Acceleration**: Ensure browser hardware acceleration is enabled
-
-## Chrome Compatibility
-
-The extension uses Manifest V3 which is compatible with both Firefox and Chrome:
-
-- **Firefox**: Native support, recommended platform
-- **Chrome**: Works but may have some limitations due to Web Audio API differences
-- **Edge**: Should work as it's Chromium-based
-
-For Chrome users, you may need to adjust the `strict_min_version` in `manifest.json`.
-
-## Development
-
-### Building
-
-The extension requires no build step - source files are packaged directly.
-
-To create a zip for distribution:
-
-```powershell
-Compress-Archive -Path yt-levelr/* -DestinationPath build/yt-levelr.zip -Force
-```
-
-### Testing
-
-1. Load the extension temporarily in Firefox
-2. Navigate to various YouTube videos (podcasts, interviews, etc.)
-3. Check popup displays correct information
-4. Verify audio levels are being adjusted smoothly
-5. Test edge cases: muted video, paused video, very quiet content
-
-### Contributing
+## Contributing
 
 Contributions welcome! See the [GitHub repository](https://github.com/AndyP2/yt-levelr) for:
 
@@ -224,12 +151,6 @@ Contributions welcome! See the [GitHub repository](https://github.com/AndyP2/yt-
 
 YT Levelr is open source. See the GitHub repository for licensing details.
 
-## Credits
-
-- **Developer**: APMicro
-- **Design**: Minimalist dark theme inspired by YouTube's design language
-- **Fonts**: DM Mono and DM Sans from Google Fonts
-
 ## Support
 
 - **Issues**: [GitHub Issues](https://github.com/AndyP2/yt-levelr/issues)
@@ -237,7 +158,4 @@ YT Levelr is open source. See the GitHub repository for licensing details.
 - **Questions**: Open an issue or pull request on GitHub
 
 ---
-
-**Version**: 1.0.0  
-**Last Updated**: May 2026  
 **Homepage**: https://github.com/AndyP2/yt-levelr
