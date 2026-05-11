@@ -17,6 +17,8 @@ A Firefox extension that automatically equalizes the volume of YouTube videos, e
 
 ### Firefox (Recommended)
 
+[![](https://blog.mozilla.org/addons/files/2015/11/get-the-addon.png)](https://addons.mozilla.org/en-GB/firefox/addon/yt-levelr)
+
 Install from the official [firefox add-on store](https://addons.mozilla.org/en-GB/firefox/addon/yt-levelr)
 
 or:
