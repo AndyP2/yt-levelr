@@ -335,14 +335,33 @@ function onNewVideo() {
   currentGain = 1.0;
   resetMeasurement();
 
-  // Wait for video element to appear
+  // Wait for video element to appear, then defer AudioContext creation until
+  // the first play event. Chrome requires a user gesture before allowing
+  // AudioContext construction; a play event satisfies this requirement.
   waitForVideo().then(el => {
-    if (videoEl !== el) {
       videoEl = el;
+
+    const initGraph = () => {
+      if (!audioCtx) {
+        try {
       setupAudioGraph(videoEl);
+        } catch (err) {
+          // setupAudioGraph already logged; don't crash the whole listener
+          return;
+        }
+      } else if (audioCtx.state === "suspended") {
+        audioCtx.resume().catch(() => {});
     }
     if (intervalId) clearInterval(intervalId);
     intervalId = setInterval(measurementLoop, 300);
+    };
+
+    if (!videoEl.paused) {
+      // Video is already playing (e.g. script injected mid-playback)
+      initGraph();
+    } else {
+      videoEl.addEventListener("play", initGraph, { once: true });
+    }
   });
 }
 
