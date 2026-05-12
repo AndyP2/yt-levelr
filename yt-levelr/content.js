@@ -1,3 +1,6 @@
+// Cross-browser compatibility shim: Firefox exposes `browser`, Chrome exposes `chrome`
+const browser = globalThis.browser ?? chrome;
+
 /**
  * YT Levelr - content.js
  *
