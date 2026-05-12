@@ -1,6 +1,14 @@
 // Cross-browser compatibility shim: Firefox exposes `browser`, Chrome exposes `chrome`
 const browser = globalThis.browser ?? globalThis.chrome;
 
+// Duplicate-injection guard: Chrome re-injects this script on SPA navigation recovery.
+// A second instance would create a second AudioContext on the same video element,
+// causing an InvalidStateError. Bail out early if already loaded.
+if (window.__ytLevelrLoaded) {
+  throw new Error("[YT Levelr] Already loaded in this page context, skipping duplicate.");
+}
+window.__ytLevelrLoaded = true;
+
 /**
  * YT Levelr - content.js
  *
@@ -339,21 +347,21 @@ function onNewVideo() {
   // the first play event. Chrome requires a user gesture before allowing
   // AudioContext construction; a play event satisfies this requirement.
   waitForVideo().then(el => {
-      videoEl = el;
+    videoEl = el;
 
     const initGraph = () => {
       if (!audioCtx) {
         try {
-      setupAudioGraph(videoEl);
+          setupAudioGraph(videoEl);
         } catch (err) {
           // setupAudioGraph already logged; don't crash the whole listener
           return;
         }
       } else if (audioCtx.state === "suspended") {
         audioCtx.resume().catch(() => {});
-    }
-    if (intervalId) clearInterval(intervalId);
-    intervalId = setInterval(measurementLoop, 300);
+      }
+      if (intervalId) clearInterval(intervalId);
+      intervalId = setInterval(measurementLoop, 300);
     };
 
     if (!videoEl.paused) {
