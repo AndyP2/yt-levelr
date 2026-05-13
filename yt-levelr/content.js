@@ -118,17 +118,24 @@ function log(msg) {
 
 function setupAudioGraph(videoEl) {
   try {
-    if (audioCtx) {
-      try { audioCtx.close(); } catch(e) {}
+    // createMediaElementSource permanently binds to the video element. Calling it
+    // again on the same element throws InvalidStateError even if the previous
+    // AudioContext was closed - the binding survives context closure.
+    // YouTube reuses the same <video> element across SPA navigations, so we must
+    // never close the AudioContext or call createMediaElementSource more than once.
+    // Instead: create everything once, then on subsequent calls just disconnect and
+    // reconnect the graph (which lets us update gainNode.gain etc.) and resume.
+    if (!audioCtx) {
+      audioCtx = new AudioContext();
+      sourceNode = audioCtx.createMediaElementSource(videoEl);
+      log("AudioContext and sourceNode created");
     }
 
-    audioCtx = new AudioContext();
-
-    // AudioContext may start suspended if created before a user gesture.
-    // resume() is a no-op if already running, so safe to call unconditionally.
     audioCtx.resume().catch(() => {});
 
-    sourceNode = audioCtx.createMediaElementSource(videoEl);
+    // Disconnect existing graph before reconnecting, so we can safely recreate
+    // compressor/gain/analyser nodes without accumulating stale connections.
+    try { sourceNode.disconnect(); } catch(e) {}
 
     // Gentle compressor to tame transient peaks before gain adjustment
     compressorNode = audioCtx.createDynamicsCompressor();
@@ -153,7 +160,7 @@ function setupAudioGraph(videoEl) {
 
     log("Audio graph connected");
   } catch (err) {
-    console.error("[YT Levelr] Failed to setup audio graph:", err);
+    console.error("[YT Levelr] Failed to setup audio graph:", err.name, err.message, err);
     throw err;
   }
 }
