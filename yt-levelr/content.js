@@ -1,14 +1,6 @@
 // Cross-browser compatibility shim: Firefox exposes `browser`, Chrome exposes `chrome`
 const browser = globalThis.browser ?? globalThis.chrome;
 
-// Duplicate-injection guard: Chrome re-injects this script on SPA navigation recovery.
-// A second instance would create a second AudioContext on the same video element,
-// causing an InvalidStateError. Bail out early if already loaded.
-if (window.__ytLevelrLoaded) {
-  throw new Error("[YT Levelr] Already loaded in this page context, skipping duplicate.");
-}
-window.__ytLevelrLoaded = true;
-
 /**
  * YT Levelr - content.js
  *
