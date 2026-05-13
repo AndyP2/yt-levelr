@@ -2,7 +2,7 @@
 
 A Firefox extension that automatically equalizes the volume of YouTube videos, especially podcasts where every producer has their own idea of what the correct levels should be.
 
-![Screenshot](screenshot.png)
+![popup-screenshot](popup-screenshot.png)
 
 ## Features
 
