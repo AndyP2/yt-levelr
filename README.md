@@ -1,6 +1,6 @@
 # YT Levelr
 
-A Firefox extension that automatically equalizes the volume of YouTube videos, especially podcasts where every producer has their own idea of what the correct levels should be.
+A Firefox and Chrome extension that automatically equalizes the volume of YouTube videos, especially podcasts where every producer has their own idea of what the correct levels should be.
 
 ![popup-screenshot](popup-screenshot.png)
 
@@ -12,10 +12,11 @@ A Firefox extension that automatically equalizes the volume of YouTube videos, e
 - **Drift Correction**: Slow automatic correction every 3 minutes after lock to handle long-term level shifts
 - **Noise Floor Protection**: Ignores silence periods to avoid skewing measurements
 - **Local Processing Only**: All audio processing happens entirely within your browser - no data is collected or transmitted
+- **Cross Browser Support**: uses Manifest V3 for compatibility with chrome/edge/comet and firefox
 
 ## Installation
 
-### Firefox (Recommended)
+### Firefox
 
 [![](https://blog.mozilla.org/addons/files/2015/11/get-the-addon.png)](https://addons.mozilla.org/en-GB/firefox/addon/yt-levelr)
 
@@ -26,6 +27,13 @@ or:
 1. Download the latest release from [GitHub Releases](https://github.com/AndyP2/yt-levelr/releases)
 2. Open Firefox → Menu → Add-ons and themes
 3. Click "Load Temporary Add-on" → Select `yt-levelr.zip`
+
+### Chrome
+
+Install from the official [chrome web store](https://chromewebstore.google.com/detail/yt-levelr) (if available) or:
+
+1. Download the latest release from [GitHub Releases](https://github.com/AndyP2/yt-levelr/releases)
+2. Open Chrome → Menu → Extensions → "Load unpacked" and select the extension folder, OR drag-and-drop `yt-levelr.zip` directly into the extensions page (chrome://extensions/)
 
 ## How It Works
 
@@ -88,9 +96,11 @@ The popup displays real-time information:
 
 ### Browser Compatibility
 
-- **Firefox**: Fully supported (tested on Firefox 140+)
-- **Chrome**: Experimental support via Manifest V3 compatibility
-- **Edge**: May work with Chromium-based implementation
+- **Firefox**: Fully supported (tested on Firefox 150.3)
+- **Chrome**: Fully supported (tested on Chrome 148)
+- **Comet**: Fully supported (tested on Comet 147)
+  - install from the chrome web store when available
+- **Edge** (and other chromium-based browsers): Not tested, should work
 
 ## Privacy
 
