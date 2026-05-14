@@ -14,9 +14,9 @@ const browser = globalThis.browser ?? globalThis.chrome;
  * - Samples below the noise floor are ignored to avoid silence skewing the median
  *
  * Confidence schedule (elapsed => max cut / max boost):
- *   0s:     -6dB / +3dB  (immediate, low confidence)
- *   10s:    -12dB / +6dB
+ *   0s:     -6dB  / +3dB  (immediate, low confidence)
  *   30s+:   -20dB / +15dB (full range, locked)
+ *   Limits increase linearly between 0s and 30s.
  */
 
 const TARGET_RMS = 0.08;        // Target RMS (~-22 dBFS, comfortable speech level)
@@ -194,17 +194,12 @@ function resetMeasurement() {
 
 // Returns the permitted [minGain, maxGain] for the current elapsed time
 function gainLimitsForElapsed(elapsed) {
-  let maxCutDB = 0;
-  let maxBoostDB = 0;
-  for (const step of CONFIDENCE_SCHEDULE) {
-    if (elapsed >= step.at) {
-      maxCutDB   = step.maxCutDB;
-      maxBoostDB = step.maxBoostDB;
-    }
-  }
+  const t = Math.min(1, elapsed / LOCK_TC);  // 0.0 at start, 1.0 at full confidence
+  const maxCutDB   = GAIN_LIMIT_INITIAL.maxCutDB   + t * (GAIN_LIMIT_FULL.maxCutDB   - GAIN_LIMIT_INITIAL.maxCutDB);
+  const maxBoostDB = GAIN_LIMIT_INITIAL.maxBoostDB + t * (GAIN_LIMIT_FULL.maxBoostDB - GAIN_LIMIT_INITIAL.maxBoostDB);
   return {
-    min: Math.pow(10, -maxCutDB  / 20),  // e.g. -6dB -> 0.501
-    max: Math.pow(10,  maxBoostDB / 20),  // e.g. +3dB -> 1.413
+    min: Math.pow(10, -maxCutDB  / 20),
+    max: Math.pow(10,  maxBoostDB / 20),
   };
 }
 
