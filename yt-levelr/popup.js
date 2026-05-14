@@ -269,38 +269,13 @@ function pollState() {
       drawWaveform(state);
 
     }).catch(err => {
-      if (err.message && err.message.includes("Could not establish connection")) {
-        // Content script not present - YouTube SPA navigation likely caused this.
-        // Attempt to inject content.js programmatically, then resume polling.
-        console.log("[YT Levelr popup] Content script missing, attempting inject...");
-        browser.scripting.executeScript({
-          target: { tabId: tabs[0].id },
-          files: ["content.js"]
-        }).then(() => {
-          console.log("[YT Levelr popup] Re-injected content.js");
-          if (!pollInterval) {
-            pollInterval = setInterval(pollState, POLL_INTERVAL_MS);
-          }
-        }).catch(injectErr => {
-          console.log("[YT Levelr popup] Inject failed (not on YouTube?):", injectErr);
-          statusDot.className = "status-dot off";
-          statusText.textContent = "not on a YouTube video";
-          confidenceBar.className = "confidence-bar-fill";
-          confidenceBar.style.width = "0%";
-          confidencePct.textContent = "\u2014";
-          drawWaveform({ waveform: new Array(100).fill(null) });
-          if (pollInterval) clearInterval(pollInterval);
-          pollInterval = null;
-        });
-      } else {
-        console.log("[YT Levelr popup] sendMessage failed:", err);
-        statusDot.className = "status-dot off";
-        statusText.textContent = "not on a YouTube video";
-        confidenceBar.className = "confidence-bar-fill";
-        confidenceBar.style.width = "0%";
-        confidencePct.textContent = "\u2014";
-        drawWaveform({ waveform: new Array(100).fill(null) });
-      }
+      console.log("[YT Levelr popup] sendMessage failed:", err.message);
+      statusDot.className = "status-dot off";
+      statusText.textContent = "not on a YouTube video";
+      confidenceBar.className = "confidence-bar-fill";
+      confidenceBar.style.width = "0%";
+      confidencePct.textContent = "\u2014";
+      drawWaveform({ waveform: new Array(100).fill(null) });
     });
   }).catch(err => {
     console.warn("[YT Levelr popup] tabs.query failed:", err);
