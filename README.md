@@ -20,13 +20,13 @@ YT Levelr is a **Featured** extension on the Chrome Web Store and is available f
 
 ### Firefox
 
-[![](https://blog.mozilla.org/addons/files/2015/11/get-the-addon.png)](https://addons.mozilla.org/en-GB/firefox/addon/yt-levelr)
+![Get the Add-on from Firefox Add-on Store](https://blog.mozilla.org/addons/files/2015/11/get-the-addon.png){:target="_blank"}[https://addons.mozilla.org/en-GB/firefox/addon/yt-levelr]
 
 Install from the official [Firefox Add-on Store](https://addons.mozilla.org/en-GB/firefox/addon/yt-levelr).
 
 ### Chrome
 
-[![](chrome-web-store.png)](https://chromewebstore.google.com/detail/yt-levelr/ikoamkjhfcmpcajnbfaldhmjgjbmfjgj)
+![Get the Add-on from Chrome Web Store](chrome-web-store.png){:target="_blank"}[https://chromewebstore.google.com/detail/yt-levelr/ikoamkjhfcmpcajnbfaldhmjgjbmfjgj]
 
 Install from the official [Chrome Web Store](https://chromewebstore.google.com/detail/yt-levelr/ikoamkjhfcmpcajnbfaldhmjgjbmfjgj).
 
@@ -173,4 +173,4 @@ YT Levelr is open source. See the GitHub repository for licensing details.
 - **Questions**: Open an issue or pull request on GitHub
 
 ---
-**Homepage**: https://github.com/AndyP2/yt-levelr
+**Homepage**: [https://github.com/AndyP2/yt-levelr](https://github.com/AndyP2/yt-levelr)
