@@ -2,6 +2,8 @@
 
 A Firefox and Chrome extension that automatically equalizes the volume of YouTube videos, especially podcasts where every producer has their own idea of what the correct levels should be.
 
+YT Levelr is a **Featured** extension on the Chrome Web Store and is available for both Firefox and Chromium-based browsers.
+
 ![popup-screenshot](popup-screenshot.png)
 
 ## Features
@@ -24,7 +26,7 @@ Install from the official [Firefox Add-on Store](https://addons.mozilla.org/en-G
 
 ### Chrome
 
-[![](https://developer.chrome.com/static/docs/webstore/branding/image/Chrome Web Store Badge.svg)](https://chromewebstore.google.com/detail/yt-levelr/ikoamkjhfcmpcajnbfaldhmjgjbmfjgj)
+[![](chrome-web-store.png)](https://chromewebstore.google.com/detail/yt-levelr/ikoamkjhfcmpcajnbfaldhmjgjbmfjgj)
 
 Install from the official [Chrome Web Store](https://chromewebstore.google.com/detail/yt-levelr/ikoamkjhfcmpcajnbfaldhmjgjbmfjgj).
 
@@ -109,6 +111,7 @@ YT Levelr is privacy-first:
 - ✅ No data collection or transmission
 - ✅ All processing happens locally in your browser
 - ✅ Only stores `enabled` and `targetDB` preferences locally
+
 See [Privacy Policy](privacy.html) for complete details.
 
 ## Technical Details
@@ -152,7 +155,7 @@ These values never leave your browser.
 
 ## Contributing
 
-Contributions welcome! See the [GitHub repository](https://github.com/AndyP2/yt-levelr) for:
+Contributions welcome. See the [GitHub repository](https://github.com/AndyP2/yt-levelr) for:
 
 - Issue tracking
 - Feature requests
