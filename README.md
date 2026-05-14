@@ -24,6 +24,8 @@ Install from the official [Firefox Add-on Store](https://addons.mozilla.org/en-G
 
 ### Chrome
 
+[![](https://developer.chrome.com/static/docs/webstore/branding/image/Chrome Web Store Badge.svg)](https://chromewebstore.google.com/detail/yt-levelr/ikoamkjhfcmpcajnbfaldhmjgjbmfjgj)
+
 Install from the official [Chrome Web Store](https://chromewebstore.google.com/detail/yt-levelr/ikoamkjhfcmpcajnbfaldhmjgjbmfjgj).
 
 To install manually:
