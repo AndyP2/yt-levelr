@@ -20,20 +20,17 @@ A Firefox and Chrome extension that automatically equalizes the volume of YouTub
 
 [![](https://blog.mozilla.org/addons/files/2015/11/get-the-addon.png)](https://addons.mozilla.org/en-GB/firefox/addon/yt-levelr)
 
-Install from the official [firefox add-on store](https://addons.mozilla.org/en-GB/firefox/addon/yt-levelr)
-
-or:
-
-1. Download the latest release from [GitHub Releases](https://github.com/AndyP2/yt-levelr/releases)
-2. Open Firefox → Menu → Add-ons and themes
-3. Click "Load Temporary Add-on" → Select `yt-levelr.zip`
+Install from the official [Firefox Add-on Store](https://addons.mozilla.org/en-GB/firefox/addon/yt-levelr).
 
 ### Chrome
 
-Install from the official [chrome web store](https://chromewebstore.google.com/detail/yt-levelr) (if available) or:
+Install from the official [Chrome Web Store](https://chromewebstore.google.com/detail/yt-levelr).
 
-1. Download the latest release from [GitHub Releases](https://github.com/AndyP2/yt-levelr/releases)
-2. Open Chrome → Menu → Extensions → "Load unpacked" and select the extension folder, OR drag-and-drop `yt-levelr.zip` directly into the extensions page (chrome://extensions/)
+To install manually:
+
+1. Download and unzip the latest release from [GitHub Releases](https://github.com/AndyP2/yt-levelr/releases)
+2. Go to `chrome://extensions/`, enable Developer mode
+3. Click "Load unpacked" and select the unzipped folder
 
 ## How It Works
 
@@ -59,9 +56,10 @@ YT Levelr uses the Web Audio API to intercept audio output from YouTube's video 
 ## Usage
 
 1. Install the extension
-2. Navigate to any YouTube video and play it
-3. Click the icon to adjust target level (-30 to -12 dBFS recommended)
-4. After 30 seconds, gain locks for consistent levels
+2. Reload any open YouTube tabs
+3. Play a video - the extension starts measuring immediately
+4. Click the icon to adjust target level (-30 to -12 dBFS recommended)
+5. After 30 seconds, gain locks for consistent levels
 
 ### Re-measuring
 
