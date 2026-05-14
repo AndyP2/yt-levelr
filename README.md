@@ -24,7 +24,7 @@ Install from the official [Firefox Add-on Store](https://addons.mozilla.org/en-G
 
 ### Chrome
 
-Install from the official [Chrome Web Store](https://chromewebstore.google.com/detail/yt-levelr).
+Install from the official [Chrome Web Store](https://chromewebstore.google.com/detail/yt-levelr/ikoamkjhfcmpcajnbfaldhmjgjbmfjgj).
 
 To install manually:
 
