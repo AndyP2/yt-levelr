@@ -10,7 +10,7 @@ YT Levelr is a **Featured** extension on the Chrome Web Store and is available f
 
 - **Automatic Loudness Normalization**: Automatically adjusts audio levels between videos to create a consistent listening experience
 - **Smart Gain Management**: Uses asymmetric gain limits (more aggressive cuts than boosts) to prevent sudden loud blasts
-- **Confidence-Based Adjustment**: Gradually widens gain range over 30 seconds as confidence in measurement grows
+- **Gradual Confidence Growth**: Gain limits start narrow and widen linearly until full adjustment range is available at 30s, allowing the algorithm to make small initial corrections before committing to its final decision
 - **Drift Correction**: Slow automatic correction every 3 minutes after lock to handle long-term level shifts
 - **Noise Floor Protection**: Ignores silence periods to avoid skewing measurements
 - **Local Processing Only**: All audio processing happens entirely within your browser - no data is collected or transmitted
@@ -48,11 +48,11 @@ YT Levelr uses the Web Audio API to intercept audio output from YouTube's video 
 
 ### Strategy Details
 
-- **Gain Limits Widen Over Time**:
-  - 0s: ±6dB/+3dB (immediate, low confidence)
-  - 10s: ±12dB/+6dB
-  - 30s+: ±20dB/+15dB (full range, locked)
-
+- **Gradual Confidence Growth**: 
+  - Starts with narrow gain limits (±6dB/+3dB) at t=0 for cautious initial corrections
+  - Limits widen linearly over time as confidence in measurement grows
+  - At 30s, full range is available (±20dB/+15dB) and gain locks to its final decision
+  
 - **Asymmetric Treatment**: Cuts are permitted more aggressively than boosts because a sudden loud blast is worse than staying quiet for a few seconds
 
 - **Gain Transitions**: Faster transitions for cuts (0.15s) than boosts (1.2s) to protect against sudden loud audio
