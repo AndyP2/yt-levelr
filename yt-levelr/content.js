@@ -29,16 +29,15 @@ const DRIFT_TC = 3 * 60 * 1000; // ms - slow drift correction period after lock
 
 // At each elapsed ms threshold, permitted range widens.
 // First entry applies from t=0, so there is no dead period.
-const CONFIDENCE_SCHEDULE = [
-  { at: 0,     maxCutDB: 6,  maxBoostDB: 3  },
-  { at: 10000, maxCutDB: 12, maxBoostDB: 6  },
-  { at: 30000, maxCutDB: 20, maxBoostDB: 15 },
-];
 
 // GainNode transition time constants (seconds)
 // Cuts apply faster than boosts to protect against sudden loud audio
 const TC_CUT   = 0.15;
 const TC_BOOST = 1.2;
+
+// Initial and full confidence gain limits for interpolation in gainLimitsForElapsed()
+const GAIN_LIMIT_INITIAL = { maxCutDB: 6, maxBoostDB: 3 };
+const GAIN_LIMIT_FULL    = { maxCutDB: 20, maxBoostDB: 15 };
 
 let audioCtx = null;
 let sourceNode = null;
