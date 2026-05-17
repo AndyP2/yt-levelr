@@ -19,12 +19,12 @@ const browser = globalThis.browser ?? globalThis.chrome;
  *   Limits increase linearly between 0s and 30s.
  */
 
-const TARGET_RMS = 0.08;        // Target RMS (~-22 dBFS, comfortable speech level)
-const NOISE_FLOOR = 0.005;      // Ignore samples quieter than this
-const MAX_GAIN = 5.62;          // +15dB absolute ceiling
-const MIN_GAIN = 0.1;           // -20dB absolute floor
+const TARGET_RMS = 0.08; // Target RMS (~-22 dBFS, comfortable speech level)
+const NOISE_FLOOR = 0.005; // Ignore samples quieter than this
+const MAX_GAIN = 5.62; // +15dB absolute ceiling
+const MIN_GAIN = 0.1; // -20dB absolute floor
 
-const LOCK_TC  = 30000;         // ms - full confidence, lock gain
+const LOCK_TC = 30000; // ms - full confidence, lock gain
 const DRIFT_TC = 3 * 60 * 1000; // ms - slow drift correction period after lock
 
 // At each elapsed ms threshold, permitted range widens.
@@ -32,12 +32,18 @@ const DRIFT_TC = 3 * 60 * 1000; // ms - slow drift correction period after lock
 
 // GainNode transition time constants (seconds)
 // Cuts apply faster than boosts to protect against sudden loud audio
-const TC_CUT   = 0.15;
+const TC_CUT = 0.15;
 const TC_BOOST = 1.2;
 
 // Initial and full confidence gain limits for interpolation in gainLimitsForElapsed()
-const GAIN_LIMIT_INITIAL = { maxCutDB: 6, maxBoostDB: 3 };
-const GAIN_LIMIT_FULL    = { maxCutDB: 20, maxBoostDB: 15 };
+const GAIN_LIMIT_INITIAL = {
+  maxCutDB: 6,
+  maxBoostDB: 3
+};
+const GAIN_LIMIT_FULL = {
+  maxCutDB: 20,
+  maxBoostDB: 15
+};
 
 let audioCtx = null;
 let sourceNode = null;
@@ -51,11 +57,11 @@ const waveformHistory = new Array(WAVEFORM_SIZE).fill(null);
 let waveformHead = 0;
 
 let measurementSamples = [];
-let playingMs = 0;        // cumulative ms of actual playback (excludes paused time)
-let lastTickTime = null;  // wall clock at last tick, for incrementing playingMs
+let playingMs = 0; // cumulative ms of actual playback (excludes paused time)
+let lastTickTime = null; // wall clock at last tick, for incrementing playingMs
 let locked = false;
 let currentGain = 1.0;
-let intervalId = null;    // setInterval handle for measurementLoop
+let intervalId = null; // setInterval handle for measurementLoop
 let lastDriftCorrection = null;
 
 let enabled = true;
@@ -134,11 +140,13 @@ function setupAudioGraph(videoEl) {
 
     // Disconnect existing graph before reconnecting, so we can safely recreate
     // compressor/gain/analyser nodes without accumulating stale connections.
-    try { sourceNode.disconnect(); } catch(e) {}
+    try {
+      sourceNode.disconnect();
+    } catch (e) {}
 
     // Gentle compressor to tame transient peaks before gain adjustment
     compressorNode = audioCtx.createDynamicsCompressor();
-    compressorNode.threshold.value = -18;  // dB
+    compressorNode.threshold.value = -18; // dB
     compressorNode.knee.value = 10;
     compressorNode.ratio.value = 3;
     compressorNode.attack.value = 0.05;
@@ -167,7 +175,8 @@ function setupAudioGraph(videoEl) {
 }
 
 function getRMS() {
-  if (!analyserNode) return 0;
+  if (!analyserNode)
+    return 0;
   const buf = new Float32Array(analyserNode.fftSize);
   try {
     analyserNode.getFloatTimeDomainData(buf);
@@ -195,12 +204,12 @@ function resetMeasurement() {
 
 // Returns the permitted [minGain, maxGain] for the current elapsed time
 function gainLimitsForElapsed(elapsed) {
-  const t = Math.min(1, elapsed / LOCK_TC);  // 0.0 at start, 1.0 at full confidence
-  const maxCutDB   = GAIN_LIMIT_INITIAL.maxCutDB   + t * (GAIN_LIMIT_FULL.maxCutDB   - GAIN_LIMIT_INITIAL.maxCutDB);
+  const t = Math.min(1, elapsed / LOCK_TC); // 0.0 at start, 1.0 at full confidence
+  const maxCutDB = GAIN_LIMIT_INITIAL.maxCutDB + t * (GAIN_LIMIT_FULL.maxCutDB - GAIN_LIMIT_INITIAL.maxCutDB);
   const maxBoostDB = GAIN_LIMIT_INITIAL.maxBoostDB + t * (GAIN_LIMIT_FULL.maxBoostDB - GAIN_LIMIT_INITIAL.maxBoostDB);
   return {
-    min: Math.pow(10, -maxCutDB  / 20),
-    max: Math.pow(10,  maxBoostDB / 20),
+    min: Math.pow(10, -maxCutDB / 20),
+    max: Math.pow(10, maxBoostDB / 20),
   };
 }
 
@@ -208,9 +217,8 @@ function applyGain(g, elapsed) {
   try {
     const limits = gainLimitsForElapsed(elapsed !== undefined ? elapsed : LOCK_TC);
     const clamped = Math.max(
-      Math.max(MIN_GAIN, limits.min),
-      Math.min(Math.min(MAX_GAIN, limits.max), g)
-    );
+        Math.max(MIN_GAIN, limits.min),
+        Math.min(Math.min(MAX_GAIN, limits.max), g));
 
     const isCut = clamped < currentGain;
     const tc = isCut ? TC_CUT : TC_BOOST;
@@ -228,7 +236,8 @@ function getVolumeScale() {
   // Returns the current volume as a linear scale factor (0.05..1.0).
   // Returns null if the video is muted or below the minimum usable threshold,
   // which callers should treat the same as paused.
-  if (!videoEl || videoEl.muted || videoEl.volume < 0.05) return null;
+  if (!videoEl || videoEl.muted || videoEl.volume < 0.05)
+    return null;
   return videoEl.volume;
 }
 
@@ -237,7 +246,8 @@ function isEffectivelyMuted() {
 }
 
 function measurementLoop() {
-  if (!analyserNode || !enabled) return;
+  if (!analyserNode || !enabled)
+    return;
 
   // Resume AudioContext if it was suspended (e.g. browser autoplay policy)
   if (audioCtx && audioCtx.state === "suspended") {
@@ -276,7 +286,8 @@ function measurementLoop() {
   waveformHead = (waveformHead + 1) % WAVEFORM_SIZE;
 
   // Skip silence
-  if (trueRMS < NOISE_FLOOR) return;
+  if (trueRMS < NOISE_FLOOR)
+    return;
 
   if (!locked) {
     measurementSamples.push(trueRMS);
@@ -289,7 +300,7 @@ function measurementLoop() {
       // Gain is set purely from true signal level -- volume slider scales output naturally
       const targetGain = state.targetRMS / medianRMS;
       applyGain(targetGain, playingMs);
-      log(`Gain update at ${(playingMs/1000).toFixed(1)}s playing: ${currentGain.toFixed(3)}x (true RMS: ${medianRMS.toFixed(4)}, volume: ${volumeScale.toFixed(2)})`);
+      log(`Gain update at ${(playingMs / 1000).toFixed(1)}s playing: ${currentGain.toFixed(3)}x (true RMS: ${medianRMS.toFixed(4)}, volume: ${volumeScale.toFixed(2)})`);
     }
 
     // Lock at 30s of actual playback
@@ -320,12 +331,13 @@ function measurementLoop() {
 }
 
 function median(arr) {
-  if (arr.length === 0) return 0;
+  if (arr.length === 0)
+    return 0;
   const sorted = [...arr].sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
   return sorted.length % 2 !== 0
-    ? sorted[mid]
-    : (sorted[mid - 1] + sorted[mid]) / 2;
+   ? sorted[mid]
+   : (sorted[mid - 1] + sorted[mid]) / 2;
 }
 
 // --- YouTube navigation detection ---
@@ -355,7 +367,8 @@ function onNewVideo() {
       } else if (audioCtx.state === "suspended") {
         audioCtx.resume().catch(() => {});
       }
-      if (intervalId) clearInterval(intervalId);
+      if (intervalId)
+        clearInterval(intervalId);
       intervalId = setInterval(measurementLoop, 300);
     };
 
@@ -363,7 +376,9 @@ function onNewVideo() {
       // Video is already playing (e.g. script injected mid-playback)
       initGraph();
     } else {
-      videoEl.addEventListener("play", initGraph, { once: true });
+      videoEl.addEventListener("play", initGraph, {
+        once: true
+      });
     }
   });
 }
@@ -372,7 +387,8 @@ function waitForVideo() {
   return new Promise(resolve => {
     const check = () => {
       const el = document.querySelector("video");
-      if (el) return resolve(el);
+      if (el)
+        return resolve(el);
       setTimeout(check, 200);
     };
     check();
