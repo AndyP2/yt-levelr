@@ -151,11 +151,13 @@ function setupAudioGraph(videoEl) {
     analyserNode.fftSize = 2048;
     analyserNode.smoothingTimeConstant = 0.8;
 
-    // Graph: source -> compressor -> gain -> analyser -> destination
+    // Graph: source -> compressor -> analyser -> gain -> destination
+    // Analyser is upstream of gain so RMS measurements reflect true input level,
+    // not the already-adjusted output (which would cause the gain to chase itself).
     sourceNode.connect(compressorNode);
-    compressorNode.connect(gainNode);
-    gainNode.connect(analyserNode);
-    analyserNode.connect(audioCtx.destination);
+    compressorNode.connect(analyserNode);
+    analyserNode.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
 
     log("Audio graph connected");
   } catch (err) {
