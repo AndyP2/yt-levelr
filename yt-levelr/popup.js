@@ -8,7 +8,8 @@ function dbToRMS(db) {
 }
 
 function rmsToDb(rms) {
-  if (rms <= 0) return -96;
+  if (rms <= 0)
+    return -96;
   return 20 * Math.log10(rms);
 }
 
@@ -29,8 +30,8 @@ function gainToBarPercent(gain) {
 const canvas = document.getElementById("waveform-canvas");
 const waveformWrap = document.getElementById("waveform-wrap");
 const ctx = canvas.getContext("2d");
-const CW = canvas.width;   // 228
-const CH = canvas.height;  // 88
+const CW = canvas.width; // 228
+const CH = canvas.height; // 88
 
 // Y axis: -48dBFS (bottom) to 0dBFS (top), linear in dB
 const DB_MIN = -48;
@@ -44,16 +45,16 @@ function dbToY(db) {
 const GRID_LINES = [-48, -36, -24, -12, 0];
 
 // Colours matching CSS vars
-const C_BG            = "#1a1a1a";
-const C_GRID          = "#242424";
-const C_GRID_TEXT     = "#444";
-const C_WAVEFORM      = "rgba(200,240,96,0.25)";
+const C_BG = "#1a1a1a";
+const C_GRID = "#242424";
+const C_GRID_TEXT = "#444";
+const C_WAVEFORM = "rgba(200,240,96,0.25)";
 const C_WAVEFORM_LINE = "rgba(200,240,96,0.55)";
-const C_TARGET        = "rgba(200,240,96,0.3)";
-const C_BAND          = "rgba(200,240,96,0.07)";
-const C_BAND_EDGE     = "rgba(200,240,96,0.2)";
-const C_GAIN_LINE     = "#c8f060";
-const C_NULL          = "rgba(255,255,255,0.04)";
+const C_TARGET = "rgba(200,240,96,0.3)";
+const C_BAND = "rgba(200,240,96,0.07)";
+const C_BAND_EDGE = "rgba(200,240,96,0.2)";
+const C_GAIN_LINE = "#c8f060";
+const C_NULL = "rgba(255,255,255,0.04)";
 
 function drawWaveform(state) {
   ctx.clearRect(0, 0, CW, CH);
@@ -106,10 +107,10 @@ function drawWaveform(state) {
   // Adjustment band -- shows permitted gain range from confidence schedule
   if (state.gainLimits && state.targetRMS) {
     const targetDb = rmsToDb(state.targetRMS);
-    const cutDB    = gainToDb(1 / state.gainLimits.min);
-    const boostDB  = gainToDb(state.gainLimits.max);
-    const bandTop  = dbToY(targetDb + boostDB);
-    const bandBot  = dbToY(targetDb - cutDB);
+    const cutDB = gainToDb(1 / state.gainLimits.min);
+    const boostDB = gainToDb(state.gainLimits.max);
+    const bandTop = dbToY(targetDb + boostDB);
+    const bandBot = dbToY(targetDb - cutDB);
 
     ctx.fillStyle = C_BAND;
     ctx.fillRect(0, bandTop, CW, bandBot - bandTop);
@@ -118,8 +119,10 @@ function drawWaveform(state) {
     ctx.lineWidth = 1;
     ctx.setLineDash([2, 5]);
     ctx.beginPath();
-    ctx.moveTo(0, bandTop); ctx.lineTo(CW, bandTop);
-    ctx.moveTo(0, bandBot); ctx.lineTo(CW, bandBot);
+    ctx.moveTo(0, bandTop);
+    ctx.lineTo(CW, bandTop);
+    ctx.moveTo(0, bandBot);
+    ctx.lineTo(CW, bandBot);
     ctx.stroke();
     ctx.setLineDash([]);
   }
@@ -128,7 +131,10 @@ function drawWaveform(state) {
   ctx.beginPath();
   let started = false;
   for (let i = 0; i < N; i++) {
-    if (waveform[i] === null) { started = false; continue; }
+    if (waveform[i] === null) {
+      started = false;
+      continue;
+    }
     const x = i * colW;
     const y = dbToY(rmsToDb(waveform[i]));
     if (!started) {
@@ -150,11 +156,17 @@ function drawWaveform(state) {
   ctx.beginPath();
   started = false;
   for (let i = 0; i < N; i++) {
-    if (waveform[i] === null) { started = false; continue; }
+    if (waveform[i] === null) {
+      started = false;
+      continue;
+    }
     const x = i * colW + colW / 2;
     const y = dbToY(rmsToDb(waveform[i]));
-    if (!started) { ctx.moveTo(x, y); started = true; }
-    else ctx.lineTo(x, y);
+    if (!started) {
+      ctx.moveTo(x, y);
+      started = true;
+    } else
+      ctx.lineTo(x, y);
   }
   ctx.strokeStyle = C_WAVEFORM_LINE;
   ctx.lineWidth = 1.5;
@@ -181,17 +193,17 @@ function drawWaveform(state) {
 
 // ---- DOM elements ----
 
-const toggleEl      = document.getElementById("enabled-toggle");
-const toggleLabel   = document.getElementById("toggle-label");
-const gainDisplay   = document.getElementById("gain-display");
-const gainBar       = document.getElementById("gain-bar");
-const statusDot     = document.getElementById("status-dot");
-const statusText    = document.getElementById("status-text");
+const toggleEl = document.getElementById("enabled-toggle");
+const toggleLabel = document.getElementById("toggle-label");
+const gainDisplay = document.getElementById("gain-display");
+const gainBar = document.getElementById("gain-bar");
+const statusDot = document.getElementById("status-dot");
+const statusText = document.getElementById("status-text");
 const confidenceBar = document.getElementById("confidence-bar");
 const confidencePct = document.getElementById("confidence-pct");
-const targetSlider  = document.getElementById("target-slider");
-const targetVal     = document.getElementById("target-val");
-const remeasureBtn  = document.getElementById("remeasure-btn");
+const targetSlider = document.getElementById("target-slider");
+const targetVal = document.getElementById("target-val");
+const remeasureBtn = document.getElementById("remeasure-btn");
 
 // ---- Confidence ----
 
@@ -204,7 +216,7 @@ function elapsedToConfidence(elapsed) {
 // ---- Load saved settings ----
 
 browser.storage.local.get(["enabled", "targetDB"]).then(result => {
-  const enabled  = result.enabled !== false;
+  const enabled = result.enabled !== false;
   const targetDB = result.targetDB !== undefined ? result.targetDB : -22;
 
   toggleEl.checked = enabled;
@@ -217,14 +229,18 @@ browser.storage.local.get(["enabled", "targetDB"]).then(result => {
 
 // ---- Poll content script ----
 
-let pollInterval = null;    // Track interval for cleanup
-let lastPollTime = 0;       // Last poll timestamp for debouncing
+let pollInterval = null; // Track interval for cleanup
+let lastPollTime = 0; // Last poll timestamp for debouncing
 const POLL_INTERVAL_MS = 1000; // Reduced from 800ms to 1000ms for better performance
 const POLL_DEBOUNCE_MS = 500; // Debounce polling when inactive
 
 function pollState() {
-  browser.tabs.query({ active: true, currentWindow: true }).then(tabs => {
-    if (!tabs[0]) return;
+  browser.tabs.query({
+    active: true,
+    currentWindow: true
+  }).then(tabs => {
+    if (!tabs[0])
+      return;
 
     const now = Date.now();
 
@@ -234,8 +250,11 @@ function pollState() {
     }
     lastPollTime = now;
 
-    browser.tabs.sendMessage(tabs[0].id, { type: "getState" }).then(state => {
-      if (!state) return;
+    browser.tabs.sendMessage(tabs[0].id, {
+      type: "getState"
+    }).then(state => {
+      if (!state)
+        return;
 
       const gainDb = gainToDb(state.gain);
       gainDisplay.textContent = state.gain.toFixed(2);
@@ -275,7 +294,9 @@ function pollState() {
       confidenceBar.className = "confidence-bar-fill";
       confidenceBar.style.width = "0%";
       confidencePct.textContent = "\u2014";
-      drawWaveform({ waveform: new Array(100).fill(null) });
+      drawWaveform({
+        waveform: new Array(100).fill(null)
+      });
     });
   }).catch(err => {
     console.warn("[YT Levelr popup] tabs.query failed:", err);
@@ -292,9 +313,18 @@ toggleEl.addEventListener("change", () => {
   const enabled = toggleEl.checked;
   toggleLabel.textContent = enabled ? "ON" : "OFF";
   document.body.classList.toggle("disabled", !enabled);
-  browser.storage.local.set({ enabled });
-  browser.tabs.query({ active: true, currentWindow: true }).then(tabs => {
-    if (tabs[0]) browser.tabs.sendMessage(tabs[0].id, { type: "setEnabled", value: enabled });
+  browser.storage.local.set({
+    enabled
+  });
+  browser.tabs.query({
+    active: true,
+    currentWindow: true
+  }).then(tabs => {
+    if (tabs[0])
+      browser.tabs.sendMessage(tabs[0].id, {
+        type: "setEnabled",
+        value: enabled
+      });
   });
 });
 
@@ -302,15 +332,30 @@ targetSlider.addEventListener("input", () => {
   const db = parseInt(targetSlider.value);
   targetVal.textContent = `${db} dBFS`;
   const rms = dbToRMS(db);
-  browser.storage.local.set({ targetDB: db });
-  browser.tabs.query({ active: true, currentWindow: true }).then(tabs => {
-    if (tabs[0]) browser.tabs.sendMessage(tabs[0].id, { type: "setTarget", value: rms });
+  browser.storage.local.set({
+    targetDB: db
+  });
+  browser.tabs.query({
+    active: true,
+    currentWindow: true
+  }).then(tabs => {
+    if (tabs[0])
+      browser.tabs.sendMessage(tabs[0].id, {
+        type: "setTarget",
+        value: rms
+      });
   });
 });
 
 remeasureBtn.addEventListener("click", () => {
-  browser.tabs.query({ active: true, currentWindow: true }).then(tabs => {
-    if (tabs[0]) browser.tabs.sendMessage(tabs[0].id, { type: "remeasure" });
+  browser.tabs.query({
+    active: true,
+    currentWindow: true
+  }).then(tabs => {
+    if (tabs[0])
+      browser.tabs.sendMessage(tabs[0].id, {
+        type: "remeasure"
+      });
   });
   statusDot.className = "status-dot measuring";
   statusText.textContent = "measuring…";
