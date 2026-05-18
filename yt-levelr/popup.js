@@ -8,8 +8,9 @@ function dbToRMS(db) {
 }
 
 function rmsToDb(rms) {
-  if (rms <= 0)
+  if (rms <= 0) {
     return -96;
+  }
   return 20 * Math.log10(rms);
 }
 
@@ -165,8 +166,9 @@ function drawWaveform(state) {
     if (!started) {
       ctx.moveTo(x, y);
       started = true;
-    } else
+    } else {
       ctx.lineTo(x, y);
+    }
   }
   ctx.strokeStyle = C_WAVEFORM_LINE;
   ctx.lineWidth = 1.5;
@@ -215,7 +217,7 @@ function elapsedToConfidence(elapsed) {
 
 // ---- Load saved settings ----
 
-browser.storage.local.get(["enabled", "targetDB"]).then(result => {
+browser.storage.local.get(["enabled", "targetDB"]).then((result) => {
   const enabled = result.enabled !== false;
   const targetDB = result.targetDB !== undefined ? result.targetDB : -22;
 
@@ -235,72 +237,79 @@ const POLL_INTERVAL_MS = 1000; // Reduced from 800ms to 1000ms for better perfor
 const POLL_DEBOUNCE_MS = 500; // Debounce polling when inactive
 
 function pollState() {
-  browser.tabs.query({
-    active: true,
-    currentWindow: true
-  }).then(tabs => {
-    if (!tabs[0])
-      return;
-
-    const now = Date.now();
-
-    // Debounce polling when tab is inactive
-    if (now - lastPollTime < POLL_DEBOUNCE_MS) {
-      return;
-    }
-    lastPollTime = now;
-
-    browser.tabs.sendMessage(tabs[0].id, {
-      type: "getState"
-    }).then(state => {
-      if (!state)
+  browser.tabs
+    .query({
+      active: true,
+      currentWindow: true,
+    })
+    .then((tabs) => {
+      if (!tabs[0]) {
         return;
-
-      const gainDb = gainToDb(state.gain);
-      gainDisplay.textContent = state.gain.toFixed(2);
-      // Restore the unit span safely
-      const unitSpan = document.createElement("span");
-      unitSpan.className = "unit";
-      unitSpan.textContent = "x";
-      gainDisplay.appendChild(unitSpan);
-      gainBar.style.width = gainToBarPercent(state.gain) + "%";
-
-      if (!state.enabled) {
-        statusDot.className = "status-dot off";
-        statusText.textContent = "disabled";
-        confidenceBar.className = "confidence-bar-fill";
-        confidenceBar.style.width = "0%";
-        confidencePct.textContent = "—";
-      } else if (state.locked) {
-        statusDot.className = "status-dot locked";
-        statusText.textContent = `locked · ${gainDb >= 0 ? "+" : ""}${gainDb.toFixed(1)} dB`;
-        confidenceBar.className = "confidence-bar-fill locked";
-        confidencePct.textContent = "locked";
-      } else {
-        const pct = elapsedToConfidence(state.elapsed);
-        statusDot.className = "status-dot measuring";
-        statusText.textContent = "measuring…";
-        confidenceBar.className = "confidence-bar-fill";
-        confidenceBar.style.width = pct + "%";
-        confidencePct.textContent = Math.round(pct) + "%";
       }
 
-      drawWaveform(state);
+      const now = Date.now();
 
-    }).catch(err => {
-      console.log("[YT Levelr popup] sendMessage failed:", err.message);
-      statusDot.className = "status-dot off";
-      statusText.textContent = "not on a YouTube video";
-      confidenceBar.className = "confidence-bar-fill";
-      confidenceBar.style.width = "0%";
-      confidencePct.textContent = "\u2014";
-      drawWaveform({
-        waveform: new Array(100).fill(null)
-      });
+      // Debounce polling when tab is inactive
+      if (now - lastPollTime < POLL_DEBOUNCE_MS) {
+        return;
+      }
+      lastPollTime = now;
+
+      browser.tabs
+        .sendMessage(tabs[0].id, {
+          type: "getState",
+        })
+        .then((state) => {
+          if (!state) {
+            return;
+          }
+
+          const gainDb = gainToDb(state.gain);
+          gainDisplay.textContent = state.gain.toFixed(2);
+          // Restore the unit span safely
+          const unitSpan = document.createElement("span");
+          unitSpan.className = "unit";
+          unitSpan.textContent = "x";
+          gainDisplay.appendChild(unitSpan);
+          gainBar.style.width = gainToBarPercent(state.gain) + "%";
+
+          if (!state.enabled) {
+            statusDot.className = "status-dot off";
+            statusText.textContent = "disabled";
+            confidenceBar.className = "confidence-bar-fill";
+            confidenceBar.style.width = "0%";
+            confidencePct.textContent = "—";
+          } else if (state.locked) {
+            statusDot.className = "status-dot locked";
+            statusText.textContent = `locked · ${gainDb >= 0 ? "+" : ""}${gainDb.toFixed(1)} dB`;
+            confidenceBar.className = "confidence-bar-fill locked";
+            confidencePct.textContent = "locked";
+          } else {
+            const pct = elapsedToConfidence(state.elapsed);
+            statusDot.className = "status-dot measuring";
+            statusText.textContent = "measuring…";
+            confidenceBar.className = "confidence-bar-fill";
+            confidenceBar.style.width = pct + "%";
+            confidencePct.textContent = Math.round(pct) + "%";
+          }
+
+          drawWaveform(state);
+        })
+        .catch((err) => {
+          console.log("[YT Levelr popup] sendMessage failed:", err.message);
+          statusDot.className = "status-dot off";
+          statusText.textContent = "not on a YouTube video";
+          confidenceBar.className = "confidence-bar-fill";
+          confidenceBar.style.width = "0%";
+          confidencePct.textContent = "\u2014";
+          drawWaveform({
+            waveform: new Array(100).fill(null),
+          });
+        });
+    })
+    .catch((err) => {
+      console.warn("[YT Levelr popup] tabs.query failed:", err);
     });
-  }).catch(err => {
-    console.warn("[YT Levelr popup] tabs.query failed:", err);
-  });
 }
 
 // Start polling after initial load
@@ -314,18 +323,21 @@ toggleEl.addEventListener("change", () => {
   toggleLabel.textContent = enabled ? "ON" : "OFF";
   document.body.classList.toggle("disabled", !enabled);
   browser.storage.local.set({
-    enabled
+    enabled,
   });
-  browser.tabs.query({
-    active: true,
-    currentWindow: true
-  }).then(tabs => {
-    if (tabs[0])
-      browser.tabs.sendMessage(tabs[0].id, {
-        type: "setEnabled",
-        value: enabled
-      });
-  });
+  browser.tabs
+    .query({
+      active: true,
+      currentWindow: true,
+    })
+    .then((tabs) => {
+      if (tabs[0]) {
+        browser.tabs.sendMessage(tabs[0].id, {
+          type: "setEnabled",
+          value: enabled,
+        });
+      }
+    });
 });
 
 targetSlider.addEventListener("input", () => {
@@ -333,30 +345,36 @@ targetSlider.addEventListener("input", () => {
   targetVal.textContent = `${db} dBFS`;
   const rms = dbToRMS(db);
   browser.storage.local.set({
-    targetDB: db
+    targetDB: db,
   });
-  browser.tabs.query({
-    active: true,
-    currentWindow: true
-  }).then(tabs => {
-    if (tabs[0])
-      browser.tabs.sendMessage(tabs[0].id, {
-        type: "setTarget",
-        value: rms
-      });
-  });
+  browser.tabs
+    .query({
+      active: true,
+      currentWindow: true,
+    })
+    .then((tabs) => {
+      if (tabs[0]) {
+        browser.tabs.sendMessage(tabs[0].id, {
+          type: "setTarget",
+          value: rms,
+        });
+      }
+    });
 });
 
 remeasureBtn.addEventListener("click", () => {
-  browser.tabs.query({
-    active: true,
-    currentWindow: true
-  }).then(tabs => {
-    if (tabs[0])
-      browser.tabs.sendMessage(tabs[0].id, {
-        type: "remeasure"
-      });
-  });
+  browser.tabs
+    .query({
+      active: true,
+      currentWindow: true,
+    })
+    .then((tabs) => {
+      if (tabs[0]) {
+        browser.tabs.sendMessage(tabs[0].id, {
+          type: "remeasure",
+        });
+      }
+    });
   statusDot.className = "status-dot measuring";
   statusText.textContent = "measuring…";
   confidenceBar.className = "confidence-bar-fill";

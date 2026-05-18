@@ -1,0 +1,25 @@
+{
+  "name": "yt-levelr",
+  "version": "1.0.0",
+  "description": "A Firefox and Chrome extension that automatically equalizes the volume of YouTube videos, especially podcasts where every producer has their own idea of what the correct levels should be.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AndyP2/yt-levelr.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/AndyP2/yt-levelr/issues"
+  },
+  "homepage": "https://github.com/AndyP2/yt-levelr#readme",
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.4.0"
+  }
+}

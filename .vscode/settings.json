@@ -1,6 +1,7 @@
 {
-    "cSpell.words": [
-        "Levelr",
-        "navigations"
-    ]
+  "cSpell.words": [
+    "Levelr",
+    "navigations"
+  ],
+  "eslint.useFlatConfig": true
 }

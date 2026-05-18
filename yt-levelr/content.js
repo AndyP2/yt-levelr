@@ -38,11 +38,11 @@ const TC_BOOST = 1.2;
 // Initial and full confidence gain limits for interpolation in gainLimitsForElapsed()
 const GAIN_LIMIT_INITIAL = {
   maxCutDB: 6,
-  maxBoostDB: 3
+  maxBoostDB: 3,
 };
 const GAIN_LIMIT_FULL = {
   maxCutDB: 20,
-  maxBoostDB: 15
+  maxBoostDB: 15,
 };
 
 let audioCtx = null;
@@ -67,11 +67,14 @@ let lastDriftCorrection = null;
 let enabled = true;
 
 // Load enabled state from storage with error handling
-browser.storage.local.get("enabled").then(result => {
-  enabled = result.enabled !== false; // default true
-}).catch(err => {
-  console.warn("[YT Levelr] Failed to load enabled state:", err);
-});
+browser.storage.local
+  .get("enabled")
+  .then((result) => {
+    enabled = result.enabled !== false; // default true
+  })
+  .catch((err) => {
+    console.warn("[YT Levelr] Failed to load enabled state:", err);
+  });
 
 // Listen for messages from popup
 browser.runtime.onMessage.addListener((msg, sender, sendResponse) => {
@@ -103,7 +106,7 @@ browser.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         targetRMS: state.targetRMS,
         elapsed: playingMs,
         waveform,
-        gainLimits: limits
+        gainLimits: limits,
       });
       return true; // keeps the message channel open for sendResponse
     }
@@ -114,7 +117,7 @@ browser.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
 // Mutable state that the popup can adjust
 const state = {
-  targetRMS: TARGET_RMS
+  targetRMS: TARGET_RMS,
 };
 
 function log(msg) {
@@ -175,8 +178,9 @@ function setupAudioGraph(videoEl) {
 }
 
 function getRMS() {
-  if (!analyserNode)
+  if (!analyserNode) {
     return 0;
+  }
   const buf = new Float32Array(analyserNode.fftSize);
   try {
     analyserNode.getFloatTimeDomainData(buf);
@@ -216,9 +220,7 @@ function gainLimitsForElapsed(elapsed) {
 function applyGain(g, elapsed) {
   try {
     const limits = gainLimitsForElapsed(elapsed !== undefined ? elapsed : LOCK_TC);
-    const clamped = Math.max(
-        Math.max(MIN_GAIN, limits.min),
-        Math.min(Math.min(MAX_GAIN, limits.max), g));
+    const clamped = Math.max(Math.max(MIN_GAIN, limits.min), Math.min(Math.min(MAX_GAIN, limits.max), g));
 
     const isCut = clamped < currentGain;
     const tc = isCut ? TC_CUT : TC_BOOST;
@@ -236,8 +238,9 @@ function getVolumeScale() {
   // Returns the current volume as a linear scale factor (0.05..1.0).
   // Returns null if the video is muted or below the minimum usable threshold,
   // which callers should treat the same as paused.
-  if (!videoEl || videoEl.muted || videoEl.volume < 0.05)
+  if (!videoEl || videoEl.muted || videoEl.volume < 0.05) {
     return null;
+  }
   return videoEl.volume;
 }
 
@@ -246,8 +249,9 @@ function isEffectivelyMuted() {
 }
 
 function measurementLoop() {
-  if (!analyserNode || !enabled)
+  if (!analyserNode || !enabled) {
     return;
+  }
 
   // Resume AudioContext if it was suspended (e.g. browser autoplay policy)
   if (audioCtx && audioCtx.state === "suspended") {
@@ -286,8 +290,9 @@ function measurementLoop() {
   waveformHead = (waveformHead + 1) % WAVEFORM_SIZE;
 
   // Skip silence
-  if (trueRMS < NOISE_FLOOR)
+  if (trueRMS < NOISE_FLOOR) {
     return;
+  }
 
   if (!locked) {
     measurementSamples.push(trueRMS);
@@ -300,7 +305,9 @@ function measurementLoop() {
       // Gain is set purely from true signal level -- volume slider scales output naturally
       const targetGain = state.targetRMS / medianRMS;
       applyGain(targetGain, playingMs);
-      log(`Gain update at ${(playingMs / 1000).toFixed(1)}s playing: ${currentGain.toFixed(3)}x (true RMS: ${medianRMS.toFixed(4)}, volume: ${volumeScale.toFixed(2)})`);
+      log(
+        `Gain update at ${(playingMs / 1000).toFixed(1)}s playing: ${currentGain.toFixed(3)}x (true RMS: ${medianRMS.toFixed(4)}, volume: ${volumeScale.toFixed(2)})`,
+      );
     }
 
     // Lock at 30s of actual playback
@@ -331,13 +338,12 @@ function measurementLoop() {
 }
 
 function median(arr) {
-  if (arr.length === 0)
+  if (arr.length === 0) {
     return 0;
+  }
   const sorted = [...arr].sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
-  return sorted.length % 2 !== 0
-   ? sorted[mid]
-   : (sorted[mid - 1] + sorted[mid]) / 2;
+  return sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
 }
 
 // --- YouTube navigation detection ---
@@ -353,7 +359,7 @@ function onNewVideo() {
   // Wait for video element to appear, then defer AudioContext creation until
   // the first play event. Chrome requires a user gesture before allowing
   // AudioContext construction; a play event satisfies this requirement.
-  waitForVideo().then(el => {
+  waitForVideo().then((el) => {
     videoEl = el;
 
     const initGraph = () => {
@@ -367,8 +373,9 @@ function onNewVideo() {
       } else if (audioCtx.state === "suspended") {
         audioCtx.resume().catch(() => {});
       }
-      if (intervalId)
+      if (intervalId) {
         clearInterval(intervalId);
+      }
       intervalId = setInterval(measurementLoop, 300);
     };
 
@@ -377,18 +384,19 @@ function onNewVideo() {
       initGraph();
     } else {
       videoEl.addEventListener("play", initGraph, {
-        once: true
+        once: true,
       });
     }
   });
 }
 
 function waitForVideo() {
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     const check = () => {
       const el = document.querySelector("video");
-      if (el)
+      if (el) {
         return resolve(el);
+      }
       setTimeout(check, 200);
     };
     check();

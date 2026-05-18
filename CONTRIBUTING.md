@@ -1,20 +1,22 @@
 # Contributing to YT Levelr
 
-Thank you for your interest in contributing to YT Levelr! This document outlines the contribution guidelines and project structure.
+YT Levelr is a small solo project that welcomes contributions. The guidelines below are written with that context in mind.
 
 ## Project Structure
 
-```
+```text
 yt-levelr/
 ├── yt-levelr/              # Extension source files
-│   ├── manifest.json       # Firefox extension manifest (Manifest V3)
+│   ├── manifest.json       # Extension manifest (Manifest V3)
 │   ├── content.js          # Main audio processing logic
 │   ├── popup.html          # Extension popup UI
 │   ├── popup.js            # Popup functionality and state management
 │   └── icons/              # Extension icon files
-├── privacy.html            # Privacy policy documentation
+├── privacy.html            # Privacy policy
 ├── README.md               # User documentation
 ├── CHANGELOG.md            # Version history
+├── package.json            # Dev tooling dependencies
+├── eslint.config.mjs       # ESLint configuration
 ├── .github/
 │   └── workflows/
 │       └── release.yml     # CI/CD release automation
@@ -31,16 +33,24 @@ yt-levelr/
 ### Prerequisites
 
 - **Git**: For version control
-- **Node.js** (optional): For potential future tooling
-- **Firefox**: For testing the extension
+- **Node.js**: For linting and formatting tools
+- **Firefox or Chrome**: For testing the extension
 
 ### Loading for Development
 
-1. Open Firefox
-2. Navigate to `about:debugging`
-3. Click "This tempory add-on"
-4. Click "Load Add-on from File..."
-5. Select the `yt-levelr/yt-levelr` folder
+**Firefox:**
+
+1. Navigate to `about:debugging`
+2. Click "This Temporary Add-on"
+3. Click "Load Add-on from File..."
+4. Select the `yt-levelr/yt-levelr` folder
+
+**Chrome:**
+
+1. Navigate to `chrome://extensions`
+2. Enable "Developer mode"
+3. Click "Load unpacked"
+4. Select the `yt-levelr/yt-levelr` folder
 
 ### Building
 
@@ -54,13 +64,20 @@ Compress-Archive -Path yt-levelr/* -DestinationPath build/yt-levelr.zip -Force
 
 ## Code Style
 
-### JavaScript/TypeScript
+### JavaScript
 
 - **Indentation**: 2 spaces (configured in `.editorconfig`)
 - **Line Length**: Maximum 120 characters
 - **Semicolons**: Required
 - **Braces**: Always use braces for control structures
 - **Naming**: camelCase for variables/functions, PascalCase for classes
+
+To auto-fix and format, run from the project root:
+
+```bash
+npx eslint --fix yt-levelr/content.js yt-levelr/popup.js
+npx prettier --write yt-levelr/content.js yt-levelr/popup.js
+```
 
 ### HTML/CSS
 
@@ -125,38 +142,23 @@ function error(msg, err) {
 
 Test on:
 - Firefox (primary platform)
-- Chrome (experimental support)
+- Chrome
 - Edge (Chromium-based)
 
-## Issue Guidelines
+## Known Limitations
 
-### Bug Reports
-
-When reporting bugs, please include:
-
-1. **Environment**: Browser version, OS, extension version
-2. **Steps to Reproduce**: Clear, numbered steps
-3. **Expected Behavior**: What should happen
-4. **Actual Behavior**: What actually happens
-5. **Screenshots/Logs**: Console errors or relevant screenshots
-
-### Feature Requests
-
-When requesting features, please include:
-
-1. **Use Case**: Why this feature is needed
-2. **Problem Solved**: What problem it addresses
-3. **Alternatives Considered**: Other solutions tried
-4. **Implementation Notes**: Any technical considerations
+1. **Music Videos**: Extended quiet intros may not be handled correctly
+2. **Very Quiet Audio**: Content below -48 dBFS may not trigger measurements
+3. **YouTube Changes**: May break on major YouTube UI redesigns
 
 ## Pull Request Guidelines
 
 ### Before Submitting
 
-1. **Update Documentation**: Update README, CHANGELOG if needed
-2. **Test Thoroughly**: Test on multiple videos and browsers
-3. **Code Review**: Ensure code follows project style guidelines
-4. **Commit Messages**: Use clear, descriptive commit messages
+1. Update README and CHANGELOG if needed
+2. Test on Firefox and Chrome
+3. Run ESLint and Prettier (see Code Style above)
+4. Use clear, descriptive commit messages
 
 ### Commit Message Format
 
@@ -168,17 +170,10 @@ When requesting features, please include:
 <footer>
 ```
 
-**Types:**
-- `feat`: New feature
-- `fix`: Bug fix
-- `docs`: Documentation changes
-- `style`: Code style changes (formatting)
-- `refactor`: Code refactoring
-- `perf`: Performance improvements
-- `test`: Test additions/changes
-- `chore`: Build process or auxiliary tool changes
+**Types:** `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `chore`
 
 **Examples:**
+
 ```
 feat(popup): add target level slider with persistence
 fix(content): handle AudioContext suspension gracefully
@@ -189,92 +184,40 @@ docs(README): add troubleshooting section for common issues
 
 ### Audio Processing Pipeline
 
-```
-YouTube Video Element
-    ↓
-MediaElementSource (audio interception)
-    ↓
-DynamicsCompressor (transient control)
-    ↓
-GainNode (adjustment)
-    ↓
-AnalyserNode (RMS measurement)
-    ↓
-Destination (output)
+```mermaid
+flowchart TD
+    A[YouTube Video Element]
+    B[MediaElementSource - audio interception]
+    C[DynamicsCompressor - transient control]
+    D[GainNode - adjustment]
+    E[AnalyserNode - RMS measurement]
+    F[Destination - output]
+    A --> B --> C --> D --> E --> F
 ```
 
 ### State Machine
 
-```
-┌─────────────┐
-│  INITIALIZING │
-└──────┬───────┘
-       │ video loaded
-       ↓
-┌─────────────┐
-│ MEASURING   │ ←→ [confidence builds]
-└──────┬───────┘
-       │ 30s elapsed
-       ↓
-┌─────────────┐
-│ LOCKED      │ ←→ [drift correction every 3min]
-└─────────────┘
+```mermaid
+stateDiagram-v2
+    [*] --> INITIALIZING
+    INITIALIZING --> MEASURING: video loaded
+    MEASURING --> MEASURING: confidence builds
+    MEASURING --> LOCKED: 30s elapsed
+    LOCKED --> LOCKED: drift correction every 3min
 ```
 
 ### Message Protocol
 
-Popup ↔ Content Script communication:
+Popup to content script communication:
 
 | Type | Direction | Purpose |
-|-------|-----------|---------|
+|------|-----------|---------|
 | `getState` | popup → content | Request current state |
 | `setState` | popup → content | Enable/disable extension |
 | `setTarget` | popup → content | Update target RMS level |
 | `remeasure` | popup → content | Reset measurement for current video |
 
-## Known Limitations
-
-When contributing, be aware of these known limitations:
-
-1. **Music Videos**: Extended quiet intros may not be handled correctly
-2. **Very Quiet Audio**: Content below -48 dBFS may not trigger measurements
-3. **Browser Compatibility**: Primarily Firefox, Chrome is experimental
-4. **YouTube Changes**: May break on major YouTube UI redesigns
-
-## Code of Conduct
-
-### Principles
-
-- **Respectful**: Be respectful and considerate in all interactions
-- **Inclusive**: Create a welcoming environment for all contributors
-- **Constructive**: Provide constructive feedback and receive it gracefully
-- **Transparent**: Be open about your work and decisions
-
-### Guidelines
-
-- Use welcoming and inclusive language
-- Accept constructive criticism gracefully
-- Focus on what is best for the community
-- Show empathy towards other community members
-
-## Getting Help
-
-If you need help contributing:
-
-1. **Check Documentation**: README, reviewer-notes.md, privacy.html
-2. **Open Issue**: Create an issue with your question
-3. **GitHub Discussions**: Use GitHub Discussions for general questions
-4. **Direct Contact**: Reach out to the maintainer via GitHub
-
-## License
-
-By contributing to YT Levelr, you agree that your contributions will be licensed under the project's license.
-
-## Acknowledgments
-
-Thank you for considering contributing to YT Levelr! Your help makes this project better for everyone.
-
 ---
 
-**Maintained by**: APMicro  
-**Repository**: https://github.com/AndyP2/yt-levelr  
+**Maintained by**: APMicro
+**Repository**: https://github.com/AndyP2/yt-levelr
