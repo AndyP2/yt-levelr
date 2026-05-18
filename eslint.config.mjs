@@ -5,14 +5,22 @@ export default [
   {
     languageOptions: {
       globals: {
-        document: "readonly",
         window: "readonly",
+        document: "readonly",
+        navigator: "readonly",
         console: "readonly",
         setInterval: "readonly",
         clearInterval: "readonly",
+        setTimeout: "readonly",
+        clearTimeout: "readonly",
         Date: "readonly",
         Math: "readonly",
         parseInt: "readonly",
+        parseFloat: "readonly",
+        AudioContext: "readonly",
+        location: "readonly",
+        Float32Array: "readonly",
+        Promise: "readonly",
       },
     },
     rules: {

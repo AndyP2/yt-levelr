@@ -145,7 +145,9 @@ function setupAudioGraph(videoEl) {
     // compressor/gain/analyser nodes without accumulating stale connections.
     try {
       sourceNode.disconnect();
-    } catch (e) {}
+    } catch {
+      // disconnect throws if already disconnected; safe to ignore
+    }
 
     // Gentle compressor to tame transient peaks before gain adjustment
     compressorNode = audioCtx.createDynamicsCompressor();
@@ -366,7 +368,7 @@ function onNewVideo() {
       if (!audioCtx) {
         try {
           setupAudioGraph(videoEl);
-        } catch (err) {
+        } catch {
           // setupAudioGraph already logged; don't crash the whole listener
           return;
         }
