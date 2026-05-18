@@ -29,7 +29,6 @@ function gainToBarPercent(gain) {
 // ---- Canvas setup ----
 
 const canvas = document.getElementById("waveform-canvas");
-const waveformWrap = document.getElementById("waveform-wrap");
 const ctx = canvas.getContext("2d");
 const CW = canvas.width; // 228
 const CH = canvas.height; // 88
