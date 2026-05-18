@@ -231,10 +231,9 @@ browser.storage.local.get(["enabled", "targetDB"]).then((result) => {
 
 // ---- Poll content script ----
 
-let pollInterval = null; // Track interval for cleanup
-let lastPollTime = 0; // Last poll timestamp for debouncing
-const POLL_INTERVAL_MS = 1000; // Reduced from 800ms to 1000ms for better performance
+const POLL_INTERVAL_MS = 1000;
 const POLL_DEBOUNCE_MS = 500; // Debounce polling when inactive
+let lastPollTime = 0; // Last poll timestamp for debouncing
 
 function pollState() {
   browser.tabs
@@ -314,7 +313,7 @@ function pollState() {
 
 // Start polling after initial load
 pollState();
-pollInterval = setInterval(pollState, POLL_INTERVAL_MS);
+setInterval(pollState, POLL_INTERVAL_MS);
 
 // ---- Controls ----
 
