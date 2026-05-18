@@ -239,7 +239,6 @@ function pollState() {
   browser.tabs
     .query({
       active: true,
-      currentWindow: true,
     })
     .then((tabs) => {
       if (!tabs[0]) {
@@ -327,7 +326,6 @@ toggleEl.addEventListener("change", () => {
   browser.tabs
     .query({
       active: true,
-      currentWindow: true,
     })
     .then((tabs) => {
       if (tabs[0]) {
@@ -349,7 +347,6 @@ targetSlider.addEventListener("input", () => {
   browser.tabs
     .query({
       active: true,
-      currentWindow: true,
     })
     .then((tabs) => {
       if (tabs[0]) {
@@ -365,7 +362,6 @@ remeasureBtn.addEventListener("click", () => {
   browser.tabs
     .query({
       active: true,
-      currentWindow: true,
     })
     .then((tabs) => {
       if (tabs[0]) {
