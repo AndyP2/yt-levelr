@@ -84,35 +84,59 @@ browser.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       if (gainNode && audioCtx) {
         gainNode.gain.setTargetAtTime(enabled ? currentGain : 1.0, audioCtx.currentTime, 0.1);
       }
-    }
-    if (msg.type === "setTarget") {
+    } else if (msg.type === "setTarget") {
       // TARGET_RMS is const but we can work around this via a mutable wrapper
       state.targetRMS = msg.value;
+    } else if (!state.targetRMS) {
+      // Initialize targetRMS on first message if not set yet
+      state.targetRMS = TARGET_RMS;
     }
     if (msg.type === "remeasure") {
       resetMeasurement();
     }
-    if (msg.type === "getState") {
-      // Unroll ring buffer into chronological order
+  } catch (err) {
+    console.error("[YT Levelr] Message handler error:", err);
+  }
+
+  // Always respond to getState requests, even on errors
+  if (msg.type === "getState") {
+    try {
       const waveform = [];
       for (let i = 0; i < WAVEFORM_SIZE; i++) {
         waveform.push(waveformHistory[(waveformHead + i) % WAVEFORM_SIZE]);
       }
-      const limits = gainLimitsForElapsed(locked ? LOCK_TC : playingMs);
+      
+      // Check if we're on a YouTube watch page
+      const urlPathname = new URL(location.href).pathname;
+      const isWatchPage = urlPathname.startsWith("/watch");
+
       sendResponse({
         enabled,
         gain: currentGain,
         locked,
-        targetRMS: state.targetRMS,
+        targetRMS: state.targetRMS ?? TARGET_RMS,
         elapsed: playingMs,
         waveform,
         gainLimits: limits,
+        isWatchPage,  // Tell popup if we're on a watch page
       });
-      return true; // keeps the message channel open for sendResponse
+    } catch (err) {
+      console.error("[YT Levelr] Failed to get state:", err);
+      sendResponse({
+        enabled,
+        gain: currentGain,
+        locked,
+        targetRMS: TARGET_RMS,
+        elapsed: playingMs,
+        waveform: new Array(WAVEFORM_SIZE).fill(null),
+        gainLimits: { min: 1.0, max: 1.0 },
+      });
     }
-  } catch (err) {
-    console.error("[YT Levelr] Message handler error:", err);
+
+    return true; // keeps the message channel open for sendResponse
   }
+
+  return false;
 });
 
 // Mutable state that the popup can adjust
@@ -355,6 +379,14 @@ let videoEl = null;
 
 function onNewVideo() {
   log(`New video detected: ${location.href}`);
+  
+  // Check if we're actually on a watch page (not an embedded iframe)
+  const urlPathname = new URL(location.href).pathname;
+  if (!urlPathname.startsWith("/watch")) {
+    log("Not on a YouTube watch page, skipping initialization");
+    return;
+  }
+
   currentGain = 1.0;
   resetMeasurement();
 
@@ -412,14 +444,18 @@ window.addEventListener("yt-navigate-start", () => {
 
 // YouTube fires this on SPA navigation
 window.addEventListener("yt-navigate-finish", () => {
-  if (location.href !== currentUrl) {
+  const urlPathname = new URL(location.href).pathname;
+  if (urlPathname.startsWith("/watch") && location.href !== currentUrl) {
     currentUrl = location.href;
     onNewVideo();
+  } else if (!urlPathname.startsWith("/watch")) {
+    log("Not on a YouTube watch page after navigation");
   }
 });
 
 // Also handle initial page load if already on a watch page
-if (location.pathname === "/watch") {
+const urlPathname = new URL(location.href).pathname;
+if (urlPathname === "/watch") {
   onNewVideo();
 }
 

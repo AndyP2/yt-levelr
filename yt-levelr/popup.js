@@ -252,12 +252,34 @@ function pollState() {
       }
       lastPollTime = now;
 
-      browser.tabs
-        .sendMessage(tabs[0].id, {
-          type: "getState",
-        })
+      const activeTabId = tabs[0]?.id;
+
+      browser.tabs.sendMessage(activeTabId, {
+        type: "getState",
+      })
         .then((state) => {
-          if (!state) {
+          if (!state || !Array.isArray(state.waveform)) {
+            // Content script not responding - treat as disabled
+            statusDot.className = "status-dot off";
+            statusText.textContent = "not on a YouTube video";
+            confidenceBar.className = "confidence-bar-fill";
+            confidenceBar.style.width = "0%";
+            confidencePct.textContent = "\u2014";
+            drawWaveform({ waveform: new Array(100).fill(null) });
+            return;
+          }
+
+          // Check if we're actually on a YouTube watch page
+          const isWatchPage = state.isWatchPage ?? false;
+          
+          if (!isWatchPage && !state.enabled) {
+            // We're not on a watch page and extension isn't enabled - show appropriate message
+            statusDot.className = "status-dot off";
+            statusText.textContent = "not on a YouTube video";
+            confidenceBar.className = "confidence-bar-fill";
+            confidenceBar.style.width = "0%";
+            confidencePct.textContent = "\u2014";
+            drawWaveform({ waveform: new Array(100).fill(null) });
             return;
           }
 
@@ -275,7 +297,7 @@ function pollState() {
             statusText.textContent = "disabled";
             confidenceBar.className = "confidence-bar-fill";
             confidenceBar.style.width = "0%";
-            confidencePct.textContent = "—";
+            confidencePct.textContent = "\u2014";
           } else if (state.locked) {
             statusDot.className = "status-dot locked";
             statusText.textContent = `locked · ${gainDb >= 0 ? "+" : ""}${gainDb.toFixed(1)} dB`;
@@ -293,15 +315,13 @@ function pollState() {
           drawWaveform(state);
         })
         .catch((err) => {
-          console.log("[YT Levelr popup] sendMessage failed:", err.message);
+          console.warn("[YT Levelr popup] sendMessage failed:", err.message, err.stack);
           statusDot.className = "status-dot off";
           statusText.textContent = "not on a YouTube video";
           confidenceBar.className = "confidence-bar-fill";
           confidenceBar.style.width = "0%";
           confidencePct.textContent = "\u2014";
-          drawWaveform({
-            waveform: new Array(100).fill(null),
-          });
+          drawWaveform({ waveform: new Array(100).fill(null) });
         });
     })
     .catch((err) => {
@@ -322,18 +342,16 @@ toggleEl.addEventListener("change", () => {
   browser.storage.local.set({
     enabled,
   });
-  browser.tabs
-    .query({
-      active: true,
-    })
-    .then((tabs) => {
-      if (tabs[0]) {
-        browser.tabs.sendMessage(tabs[0].id, {
-          type: "setEnabled",
-          value: enabled,
-        });
-      }
-    });
+  
+  // Get the active tab and send message to it
+  browser.tabs.query({ active: true }).then((tabs) => {
+    if (tabs[0] && tabs[0].id) {
+      browser.tabs.sendMessage(tabs[0].id, {
+        type: "setEnabled",
+        value: enabled,
+      });
+    }
+  });
 });
 
 targetSlider.addEventListener("input", () => {
@@ -343,35 +361,31 @@ targetSlider.addEventListener("input", () => {
   browser.storage.local.set({
     targetDB: db,
   });
-  browser.tabs
-    .query({
-      active: true,
-    })
-    .then((tabs) => {
-      if (tabs[0]) {
-        browser.tabs.sendMessage(tabs[0].id, {
-          type: "setTarget",
-          value: rms,
-        });
-      }
-    });
+  
+  // Get the active tab and send message to it
+  browser.tabs.query({ active: true }).then((tabs) => {
+    if (tabs[0] && tabs[0].id) {
+      browser.tabs.sendMessage(tabs[0].id, {
+        type: "setTarget",
+        value: rms,
+      });
+    }
+  });
 });
 
 remeasureBtn.addEventListener("click", () => {
-  browser.tabs
-    .query({
-      active: true,
-    })
-    .then((tabs) => {
-      if (tabs[0]) {
-        browser.tabs.sendMessage(tabs[0].id, {
-          type: "remeasure",
-        });
-      }
-    });
+  // Get the active tab and send message to it
+  browser.tabs.query({ active: true }).then((tabs) => {
+    if (tabs[0] && tabs[0].id) {
+      browser.tabs.sendMessage(tabs[0].id, {
+        type: "remeasure",
+      });
+    }
+  });
+  
   statusDot.className = "status-dot measuring";
   statusText.textContent = "measuring…";
   confidenceBar.className = "confidence-bar-fill";
   confidenceBar.style.width = "0%";
-  confidencePct.textContent = "—";
+  confidencePct.textContent = "\u2014";
 });
