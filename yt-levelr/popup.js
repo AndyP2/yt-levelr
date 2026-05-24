@@ -233,11 +233,13 @@ browser.storage.local.get(["enabled", "targetDB"]).then((result) => {
 const POLL_INTERVAL_MS = 1000;
 const POLL_DEBOUNCE_MS = 500; // Debounce polling when inactive
 let lastPollTime = 0; // Last poll timestamp for debouncing
+let pollInterval = null;
 
 function pollState() {
   browser.tabs
     .query({
       active: true,
+      currentWindow: true,
     })
     .then((tabs) => {
       if (!tabs[0]) {
@@ -311,7 +313,7 @@ function pollState() {
 
 // Start polling after initial load
 pollState();
-setInterval(pollState, POLL_INTERVAL_MS);
+pollInterval = setInterval(pollState, POLL_INTERVAL_MS);
 
 // ---- Controls ----
 
@@ -325,6 +327,7 @@ toggleEl.addEventListener("change", () => {
   browser.tabs
     .query({
       active: true,
+      currentWindow: true,
     })
     .then((tabs) => {
       if (tabs[0]) {
@@ -346,6 +349,7 @@ targetSlider.addEventListener("input", () => {
   browser.tabs
     .query({
       active: true,
+      currentWindow: true,
     })
     .then((tabs) => {
       if (tabs[0]) {
@@ -361,6 +365,7 @@ remeasureBtn.addEventListener("click", () => {
   browser.tabs
     .query({
       active: true,
+      currentWindow: true,
     })
     .then((tabs) => {
       if (tabs[0]) {
