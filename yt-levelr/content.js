@@ -1,3 +1,5 @@
+// Key design constraints: see CLAUDE.md before making changes
+
 // Cross-browser compatibility shim: Firefox exposes `browser`, Chrome exposes `chrome`
 const browser = globalThis.browser ?? globalThis.chrome;
 
