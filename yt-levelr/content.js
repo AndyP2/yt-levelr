@@ -418,8 +418,18 @@ window.addEventListener("yt-navigate-finish", () => {
   }
 });
 
-// Also handle initial page load if already on a watch page
-if (location.pathname === "/watch") {
+// yt-page-data-updated fires after yt-navigate-finish and is more reliable on
+// initial page load when the content script injects before yt-navigate-finish
+// fires. The href guard prevents double-firing alongside yt-navigate-finish.
+window.addEventListener("yt-page-data-updated", () => {
+  if (location.href !== currentUrl) {
+    currentUrl = location.href;
+    onNewVideo();
+  }
+});
+
+// Also handle initial page load if already on a watch page or Shorts
+if (location.pathname === "/watch" || location.pathname.startsWith("/shorts/")) {
   onNewVideo();
 }
 
