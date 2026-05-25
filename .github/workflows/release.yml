@@ -32,11 +32,11 @@ jobs:
           echo "Updated:"
           jq .version yt-levelr/manifest.json
           
-      # Build extension zip
+      # Build extension zip (exclude markdown docs - not needed at runtime)
       - name: Build extension zip
         run: |
           mkdir -p build
-          cd yt-levelr && zip -r ../build/yt-levelr.zip .
+          cd yt-levelr && zip -r ../build/yt-levelr.zip . --exclude "*.md"
 
       # Verify zip contents
       - name: Verify zip contents
