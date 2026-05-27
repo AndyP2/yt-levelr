@@ -70,13 +70,13 @@ let enabled = true;
 
 // Load enabled state from storage with error handling
 browser.storage.local
-  .get("enabled")
-  .then((result) => {
-    enabled = result.enabled !== false; // default true
-  })
-  .catch((err) => {
-    console.warn("[YT Levelr] Failed to load enabled state:", err);
-  });
+.get("enabled")
+.then((result) => {
+  enabled = result.enabled !== false; // default true
+})
+.catch((err) => {
+  console.warn("[YT Levelr] Failed to load enabled state:", err);
+});
 
 // Listen for messages from popup
 browser.runtime.onMessage.addListener((msg, sender, sendResponse) => {
@@ -310,8 +310,9 @@ function measurementLoop() {
       const targetGain = state.targetRMS / medianRMS;
       applyGain(targetGain, playingMs);
       log(
-        `Gain update at ${(playingMs / 1000).toFixed(1)}s playing: ${currentGain.toFixed(3)}x (true RMS: ${medianRMS.toFixed(4)}, volume: ${volumeScale.toFixed(2)})`,
-      );
+        `Gain update at ${(playingMs / 1000).toFixed(1)}s playing: ` + 
+        `${currentGain.toFixed(3)}x ` + 
+`       (true RMS: ${medianRMS.toFixed(4)}, volume: ${volumeScale.toFixed(2)})`, );
     }
 
     // Lock at 30s of actual playback
@@ -401,7 +402,9 @@ function waitForVideo() {
     const start = Date.now();
     const check = () => {
       const el = document.querySelector("video");
-      if (el) return resolve(el);
+      if (el) {
+        return resolve(el);
+      }
       if (Date.now() - start > 10000) {
         return reject(new Error("video element not found within 10s"));
       }
@@ -425,7 +428,9 @@ window.addEventListener("yt-navigate-start", () => {
 // which then causes the subsequent yt-page-data-updated guard to suppress it.
 function maybeStartForCurrentPage() {
   const url = location.href;
-  if (url === lastInitiatedUrl) return;
+  if (url === lastInitiatedUrl) {
+    return;
+  }
   if (location.pathname === "/watch" || location.pathname.startsWith("/shorts/")) {
     lastInitiatedUrl = url;
     onNewVideo();
