@@ -352,7 +352,7 @@ function median(arr) {
 
 // --- YouTube navigation detection ---
 
-let currentUrl = location.href;
+let lastInitiatedUrl = null;
 let videoEl = null;
 
 function onNewVideo() {
@@ -412,28 +412,27 @@ window.addEventListener("yt-navigate-start", () => {
   log("YouTube navigation starting...");
 });
 
-// YouTube fires this on SPA navigation
-window.addEventListener("yt-navigate-finish", () => {
-  if (location.href !== currentUrl) {
-    currentUrl = location.href;
+// maybeStartForCurrentPage is called on every YouTube SPA event and on initial
+// load. It fires onNewVideo() only when the current page is a watch or Shorts
+// URL that hasn't already been handled. Using a dedicated lastInitiatedUrl
+// (rather than a shared currentUrl that was also written for other purposes)
+// avoids a race where yt-navigate-finish fires before location.href has updated,
+// causing currentUrl to be set to the new URL before onNewVideo() is called,
+// which then causes the subsequent yt-page-data-updated guard to suppress it.
+function maybeStartForCurrentPage() {
+  const url = location.href;
+  if (url === lastInitiatedUrl) return;
+  if (location.pathname === "/watch" || location.pathname.startsWith("/shorts/")) {
+    lastInitiatedUrl = url;
     onNewVideo();
   }
-});
-
-// yt-page-data-updated fires after yt-navigate-finish and is more reliable on
-// initial page load when the content script injects before yt-navigate-finish
-// fires. The href guard prevents double-firing alongside yt-navigate-finish.
-window.addEventListener("yt-page-data-updated", () => {
-  if (location.href !== currentUrl) {
-    currentUrl = location.href;
-    onNewVideo();
-  }
-});
-
-// Also handle initial page load if already on a watch page or Shorts
-if (location.pathname === "/watch" || location.pathname.startsWith("/shorts/")) {
-  onNewVideo();
 }
+
+window.addEventListener("yt-navigate-finish", maybeStartForCurrentPage);
+window.addEventListener("yt-page-data-updated", maybeStartForCurrentPage);
+
+// Handle initial page load if already on a watch or Shorts page
+maybeStartForCurrentPage();
 
 // Gracefully handle video element removal
 window.addEventListener("beforeunload", () => {
