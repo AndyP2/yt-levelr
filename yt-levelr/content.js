@@ -391,15 +391,19 @@ function onNewVideo() {
         once: true,
       });
     }
+  }).catch((err) => {
+    console.warn("[YT Levelr] onNewVideo aborted:", err.message);
   });
 }
 
 function waitForVideo() {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
+    const start = Date.now();
     const check = () => {
       const el = document.querySelector("video");
-      if (el) {
-        return resolve(el);
+      if (el) return resolve(el);
+      if (Date.now() - start > 10000) {
+        return reject(new Error("video element not found within 10s"));
       }
       setTimeout(check, 200);
     };
