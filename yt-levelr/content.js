@@ -367,6 +367,15 @@ function onNewVideo() {
   waitForVideo().then((el) => {
     videoEl = el;
 
+    const tryResumeOnGesture = () => {
+      if (!audioCtx || audioCtx.state !== "suspended") return;
+      const resume = () => {
+        audioCtx.resume().catch(() => {});
+      };
+      document.addEventListener("click", resume, { capture: true, once: true });
+      document.addEventListener("keydown", resume, { capture: true, once: true });
+    };
+
     const initGraph = () => {
       if (!audioCtx) {
         try {
@@ -375,8 +384,13 @@ function onNewVideo() {
           // setupAudioGraph already logged; don't crash the whole listener
           return;
         }
+        // Attempt immediate resume in case a prior user gesture already exists;
+        // if not, register gesture listeners as fallback for autoplay-blocked contexts.
+        audioCtx.resume().catch(() => {});
+        tryResumeOnGesture();
       } else if (audioCtx.state === "suspended") {
         audioCtx.resume().catch(() => {});
+        tryResumeOnGesture();
       }
       if (intervalId) {
         clearInterval(intervalId);
