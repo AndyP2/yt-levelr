@@ -11,9 +11,11 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      # Step 1: Checkout code
+      # Step 1: Checkout code (full history required for git-cliff)
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       # Extract version from tag for manifest update and logging purposes only
       - name: Extract version from tag
@@ -31,7 +33,15 @@ jobs:
 
           echo "Updated:"
           jq .version yt-levelr/manifest.json
-          
+
+      # Generate changelog for this release
+      - name: Generate changelog
+        uses: orhun/git-cliff-action@v3
+        id: cliff
+        with:
+          config: cliff.toml
+          args: --latest --strip header
+
       # Build extension zip (exclude markdown docs - not needed at runtime)
       - name: Build extension zip
         run: |
@@ -48,6 +58,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: build/yt-levelr.zip
-          generate_release_notes: true  # Auto-generates notes from commits
+          body: ${{ steps.cliff.outputs.content }}
           draft: false
           prerelease: false

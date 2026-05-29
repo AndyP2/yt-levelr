@@ -1,0 +1,23 @@
+[changelog]
+header = "# Changelog\n\n"
+body = """
+{% if version %}## {{ version }} — {{ timestamp | date(format="%Y-%m-%d") }}{% else %}## Unreleased{% endif %}
+
+{% for commit in commits %}- {{ commit.message | upper_first | trim }}\
+  {% if commit.github.username %} ([@{{ commit.github.username }}](https://github.com/{{ commit.github.username }})){% endif %}
+
+{% endfor %}
+"""
+footer = ""
+trim = true
+
+[git]
+conventional_commits = false
+filter_unconventional = false
+commit_parsers = [
+  { message = "^[Mm]erge", skip = true },
+  { message = "^[Cc]hore", skip = true },
+]
+filter_commits = false
+tag_pattern = "v[0-9].*"
+sort_commits = "newest"
