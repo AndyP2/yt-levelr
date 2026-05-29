@@ -310,8 +310,8 @@ function measurementLoop() {
       const targetGain = state.targetRMS / medianRMS;
       applyGain(targetGain, playingMs);
       log(
-        `Gain update at ${(playingMs / 1000).toFixed(1)}s playing: ` + 
-        `${currentGain.toFixed(3)}x ` + 
+        `Gain update at ${(playingMs / 1000).toFixed(1)}s playing: ` +
+        `${currentGain.toFixed(3)}x ` +
 `       (true RMS: ${medianRMS.toFixed(4)}, volume: ${volumeScale.toFixed(2)})`, );
     }
 
@@ -369,12 +369,20 @@ function onNewVideo() {
     videoEl = el;
 
     const tryResumeOnGesture = () => {
-      if (!audioCtx || audioCtx.state !== "suspended") return;
+      if (!audioCtx || audioCtx.state !== "suspended") {
+        return;
+      }
       const resume = () => {
         audioCtx.resume().catch(() => {});
       };
-      document.addEventListener("click", resume, { capture: true, once: true });
-      document.addEventListener("keydown", resume, { capture: true, once: true });
+      document.addEventListener("click", resume, {
+        capture: true,
+        once: true
+      });
+      document.addEventListener("keydown", resume, {
+        capture: true,
+        once: true
+      });
     };
 
     const initGraph = () => {
