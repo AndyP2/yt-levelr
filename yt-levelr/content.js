@@ -459,6 +459,17 @@ function maybeStartForCurrentPage() {
   }
 }
 
+// --- Startup sequence — four cases, do not simplify without reading CLAUDE.md ---
+//
+// Case 1: Direct load into /watch (bookmark, address bar)
+//   Caught by: DOMContentLoaded -> maybeStartForCurrentPage, or
+//              yt-page-data-updated if that fires later
+// Case 2: SPA navigation to /watch from another YouTube page
+//   Caught by: yt-navigate-finish -> maybeStartForCurrentPage
+// Case 3: Extension reloaded with /watch tab already open
+//   Caught by: direct maybeStartForCurrentPage() call (readyState === "complete")
+// Case 4: SPA navigation away from /watch and back
+//   Caught by: yt-navigate-finish, guarded by lastInitiatedUrl
 window.addEventListener("yt-navigate-finish", maybeStartForCurrentPage);
 window.addEventListener("yt-page-data-updated", maybeStartForCurrentPage);
 
