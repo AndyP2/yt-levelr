@@ -365,6 +365,7 @@ function onNewVideo() {
   // the first play event. Chrome requires a user gesture before allowing
   // AudioContext construction; a play event satisfies this requirement.
   waitForVideo().then((el) => {
+    log(`waitForVideo resolved: paused=${el.paused} readyState=${el.readyState} src="${el.currentSrc.slice(0, 60)}"`);
     videoEl = el;
 
     const tryResumeOnGesture = () => {
@@ -377,6 +378,7 @@ function onNewVideo() {
     };
 
     const initGraph = () => {
+      log(`initGraph called: audioCtx=${audioCtx ? audioCtx.state : "null"} paused=${videoEl.paused}`);
       if (!audioCtx) {
         try {
           setupAudioGraph(videoEl);
@@ -400,8 +402,10 @@ function onNewVideo() {
 
     if (!videoEl.paused) {
       // Video is already playing (e.g. script injected mid-playback)
+      log("Video already playing, calling initGraph immediately");
       initGraph();
     } else {
+      log("Video paused, waiting for play event");
       videoEl.addEventListener("play", initGraph, {
         once: true,
       });
@@ -442,20 +446,31 @@ window.addEventListener("yt-navigate-start", () => {
 // which then causes the subsequent yt-page-data-updated guard to suppress it.
 function maybeStartForCurrentPage() {
   const url = location.href;
+  log(`maybeStartForCurrentPage: pathname="${location.pathname}" readyState="${document.readyState}" lastInitiatedUrl="${lastInitiatedUrl}"`);
   if (url === lastInitiatedUrl) {
+    log("maybeStartForCurrentPage: skipping, URL already handled");
     return;
   }
   if (location.pathname === "/watch" || location.pathname.startsWith("/shorts/")) {
     lastInitiatedUrl = url;
     onNewVideo();
+  } else {
+    log(`maybeStartForCurrentPage: pathname not a watch/shorts page, ignoring`);
   }
 }
 
 window.addEventListener("yt-navigate-finish", maybeStartForCurrentPage);
 window.addEventListener("yt-page-data-updated", maybeStartForCurrentPage);
 
-// Handle initial page load if already on a watch or Shorts page
-maybeStartForCurrentPage();
+// Handle initial page load if already on a watch or Shorts page.
+// With document_start injection the DOM may not be ready yet, so wait for
+// DOMContentLoaded if needed. On re-injection into a live page (e.g. after
+// extension reload) readyState will already be "complete" so we call directly.
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", maybeStartForCurrentPage);
+} else {
+  maybeStartForCurrentPage();
+}
 
 // Gracefully handle video element removal
 window.addEventListener("beforeunload", () => {
